@@ -9,7 +9,7 @@ services:
       - "8000:80"
   frontend:
     build:
-      context: ./frontend
+      context: ./front
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
