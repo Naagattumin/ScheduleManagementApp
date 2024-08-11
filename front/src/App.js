@@ -12,7 +12,7 @@ import { useEffect, useState } from "react";
 //     TextField
 //   } from "@mui/material";
 //   import axios from 'axios';
-//   import { prefixApi } from "./Connector";
+  import { prefixApi } from "./Connector";
 
 
 
@@ -78,52 +78,74 @@ function App() {
       
     const [todayItems, setTodayItems] = useState(initialItems);
     const [tomorrowItems, setTomorrowItems] = useState(initialItems);
-    // useEffect(() => {///////////条件が合うときに実行
-    //   //今日のタスクを取得
-    //   axios.get(`${prefixApi}/get-today-task`)
-    //     .then(response => {
-    //       if (response.data) {
-    //         setTodayItems(response.data);
-    //       }
-    //     })
-    //     .catch(error => {
-    //       console.error("There was an error fetching the data!", error);
-    //     });
-  
-    //   //明日のタスクを取得
-    //   axios.get(`${prefixApi}get-tomorrow-task`)/////////////prefixApiからget...を取得
-    //     .then(response => {
-    //       if (response.data) {
-    //         setTomorrowItems(response.data);///////////set...にresponse.dataを代入
-    //       }
-    //     })
-    //     .catch(error => {
-    //       console.error("There was an error fetching the data!", error);
-    //     });
-    // }, []);///////////ここが空なら最初に実行？
 
-    // 取りあえずダミーデータを設定 ///////////////////////////
-    useEffect(() => {
-        // ダミーデータを設定
-        setTodayItems(dummyData);
-        setTomorrowItems(dummyData);
-    }, []);
+    useEffect(() => {///////////条件が合うときに実行
+      //今日のタスクを取得
+      axios.get(`${prefixApi}/get-today-task`)
+        .then(response => {
+          if (response.data) {
+            setTodayItems(response.data);
+          }
+        })
+        .catch(error => {
+          console.error("There was an error fetching the data!", error);
+        });
+  
+      //明日のタスクを取得
+      axios.get(`${prefixApi}get-tomorrow-task`)/////////////prefixApiからget...を取得
+        .then(response => {
+          if (response.data) {
+            setTomorrowItems(response.data);///////////set...にresponse.dataを代入
+          }
+        })
+        .catch(error => {
+          console.error("There was an error fetching the data!", error);
+        });
+    }, []);///////////ここが空なら最初に実行？
+
+
 
     function proMinusHandleClick(index) {
+        
+        alert("useEffect");
         let nextTodayItems = [...todayItems];
         if (nextTodayItems[index].progress > 0){
             --nextTodayItems[index].progress;
             setTodayItems(nextTodayItems);
+
+            var tmp = new Date(); 
+            axios.post(`${prefixApi}get_task_data` + tmp, todayItems)/////////////prefixApiからget...を取得
+            .then(response => {
+              if (response.data) {
+                setTomorrowItems(response.data);///////////set...にresponse.dataを代入
+              }
+            })
+            .catch(error => {
+              console.error("There was an error fetching the data!", error);
+            });
         }
     }
 
     function proPlusHandleClick(index) {
+        
+        alert("useEffect");
         let nextTodayItems = [...todayItems];
         if (nextTodayItems[index].progress < 5){
             ++nextTodayItems[index].progress;
             setTodayItems(nextTodayItems);
         }
 
+        var tmp = new Date(); 
+        tmp.setDate( tmp.getDate() + 1 );
+        axios.post(`${prefixApi}get_task_data` + tmp, todayItems)/////////////prefixApiからget...を取得
+        .then(response => {
+          if (response.data) {
+            setTomorrowItems(response.data);///////////set...にresponse.dataを代入
+          }
+        })
+        .catch(error => {
+          console.error("There was an error fetching the data!", error);
+        });
     }
 
     return (
