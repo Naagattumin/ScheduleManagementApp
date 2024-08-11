@@ -8,13 +8,13 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "8000:80"
+      - "8001:8001"
   frontend:
     build:
       context: ./front
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "3001:3001"
   db: 
     container_name: back_db
     image: mysql:5.7
@@ -31,4 +31,3 @@ services:
     volumes: 
       - ./mysql/initdb.d:/docker-entrypoint-initdb.d
       - ./mysql/conf.d:/etc/myaql/conf.d
-      - ./mysql/log/mysql:/var/log/mysql
