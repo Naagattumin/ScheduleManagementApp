@@ -1,3 +1,5 @@
+// App.js
+
 import './App.css';
 import { useEffect, useState } from "react";
 
@@ -137,14 +139,7 @@ function App() {
                 <button className="square" style={{ display: "inline-block", width: "5ch"}} onClick={() => proPlusHandleClick(index)}>+</button>
             </ul>
             ))}
-            <h1 style={{ textAlign: "center" }}>明日のタスク</h1>
-            {tomorrowItems.map((task, index) => (
-            <ul style={{ textAlign: "center" }}>
-                <li style={{ display: "inline-block", width: "30%"}}>{task.priority}  </li>
-                <li style={{ display: "inline-block", width: "40%"}}>{task.contents}  </li>
-                <li style={{ display: "inline-block", width: "30%"}}>{task.progress}  </li>
-            </ul>
-            ))}
+            
         </>
     )
 
