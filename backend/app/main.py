@@ -78,3 +78,21 @@ def delete_task_data(request_data: Task):
         raise HTTPException(status_code=500, detail="Failed to delete task")
     finally:
         session.close()
+    
+@app.post("/post_achievment/{data}")
+def post_achievment(request_data: Task):
+    try:
+        # タスクが存在するかを確認
+        task = session.query(TaskTable).filter(TaskTable.id == request_data.id).first()
+
+        if not task:
+            logging.warning(f"No task found with id: {request_data.id}")
+            raise HTTPException(status_code=404, detail="Task not found")
+
+        task.progress = request_data.progress
+        session.commit()
+        return {"message": "Task updated successfully"}
+    except Exception as e:
+        session.rollback()
+        logging.error(f"Error updating task: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update task")
