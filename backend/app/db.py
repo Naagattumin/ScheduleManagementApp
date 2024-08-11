@@ -21,7 +21,7 @@ DATABASE = 'mysql://%s:%s@%s/%s?charset=utf8' % (
 # DBとの接続
 ENGINE = create_engine(
     DATABASE,
-    encoding="utf-8",
+    # encoding="utf-8",
     echo=True
 )
 
