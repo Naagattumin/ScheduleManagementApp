@@ -2,6 +2,8 @@ version: '3.8'
  
 services:
   backend:
+    links:
+        - db
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -13,3 +15,20 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
+  db: 
+    container_name: back_db
+    image: mysql:5.7
+    restart: always
+    tty: true
+    environment:
+      MYSQL_DATABASE: sample_db
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+      MYSQL_ROOT_PASSWORD: password
+    ports: 
+      - 3306:3306
+    command: --port 3306
+    volumes: 
+      - ./mysql/initdb.d:/docker-entrypoint-initdb.d
+      - ./mysql/conf.d:/etc/myaql/conf.d
+      - ./mysql/log/mysql:/var/log/mysql
