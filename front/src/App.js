@@ -11,8 +11,8 @@ import { useEffect, useState } from "react";
 //     Button,
 //     TextField
 //   } from "@mui/material";
-//   import axios from 'axios';
-//   import { prefixApi } from "./Connector";
+import axios from 'axios';
+import { prefixApi } from "./Connector";
 
 
 
@@ -66,7 +66,7 @@ function App() {
         progress: 1,
     }];
 
-        const initialItems = [{
+    const initialItems = [{
       id: "",
       priority: "",
       contents: "",
@@ -104,9 +104,24 @@ function App() {
 
     // 取りあえずダミーデータを設定 ///////////////////////////
     useEffect(() => {
-        // ダミーデータを設定
-        setTodayItems(dummyData);
-        setTomorrowItems(dummyData);
+      let today = new Date();
+        let year = String(today.getFullYear());
+        let month = String("0"+(today.getMonth() + 1)).slice(-2);
+        let date = String( ("0"+today.getDate()).slice(-2));
+        const baseID = year+month+date;
+      console.log(baseID)
+      axios.get(`${prefixApi}/get_task_data/${baseID}`)
+      .then(response => {
+        console.log(response)
+        if(response.data){
+          console.log(response.data)
+          setTodayItems(response.data);
+        }
+      })
+      .catch(error => {
+        console.error("There was an error fetching the data!", error);
+      });
+        // setTomorrowItems(dummyData);
     }, []);
 
     function proMinusHandleClick(index) {

@@ -1,11 +1,10 @@
-// ttt.js
-
 import axios from 'axios';
-import {useState} from 'react';
+import { useEffect, useState } from 'react';
+import { prefixApi } from "./Connector";
 
 
-export function TaskLine({task, index, changePriority, changeTaskTextBox}) {
-    
+export function TaskLine({ task, index, changePriority, changeTaskTextBox }) {
+
     return (<div className='TaskLine'>
         <TaskTextBox
             className="taskTextBox"
@@ -23,41 +22,67 @@ export function TaskLine({task, index, changePriority, changeTaskTextBox}) {
 }
 
 
-export function TaskTextBox({index, value, changeTaskTextBox}) {
+export function TaskTextBox({ index, value, changeTaskTextBox }) {
     return (
-        <input value={value} onChange={(e) => {changeTaskTextBox(index, e.target.value)}}/>
+        <input value={value} onChange={(e) => { changeTaskTextBox(index, e.target.value) }} />
     )
 }
 
-export function Priority({index, value, changePriority}) {
-    return(<>
-        <button onClick={() => {changePriority(index, -1)}}>-</button>
+export function Priority({ index, value, changePriority }) {
+    return (<>
+        <button onClick={() => { changePriority(index, -1) }}>-</button>
         {value}
-        <button onClick={() => {changePriority(index, +1)}}>+</button>
+        <button onClick={() => { changePriority(index, +1) }}>+</button>
     </>);
 }
 
-export function Tomorrow({tomorrowItems}) {
-    tomorrowItems = [{
-        id: "20240811-01",
-        priority: 5,
-        contents: "TodoAppの実装",
-        progress: 4,
-      }, {
-        id: "20240811-02",
-        priority: 4,
-        contents: "選択",
-        progress: 3,
-      }, {
-        id: "20240811-03",
-        priority: 1,
-        contents: "掃除",
-        progress: 1,
-      }];
-    const [tasks, setTasks] = useState(tomorrowItems);
+export function Tomorrow() {
+    const initialItems = [{
+        id: "",
+        priority: "",
+        contents: "",
+        progress: "",
+        sortId: ""
+    }
+    ];
+    const [tasks, setTasks] = useState(initialItems);
+    useEffect(() => {
+        let today = new Date();
+        let tomorrow = new Date();
+        tomorrow.setDate(today.getDate() + 1);
+        let year = String(tomorrow.getFullYear());
+        let month = String("0" + (tomorrow.getMonth() + 1)).slice(-2);
+        let date = String(("0" + tomorrow.getDate()).slice(-2));
+        const baseID = year + month + date;
+        axios.get(`${prefixApi}/get_task_data/${baseID}`)
+            .then(response => {
+                console.log(response)
+                if (response.data) {
+                    console.log(response.data)
+                    setTasks(response.data);
+                }
+            })
+            .catch(error => {
+                console.error("There was an error fetching the data!", error);
+            });
+    }, [])
+
     const handleButtonPush = () => {
+        let today = new Date();
+        let tomorrow = new Date();
+        tomorrow.setDate(today.getDate() + 1);
+        let year = String(tomorrow.getFullYear());
+        let month = String(tomorrow.getMonth());
+        let date = String(tomorrow.getDate());
+        let tomorrowString = year + month + date;
         // タスクのポスト
-        // axios.post();
+        axios.post(
+            `${prefixApi}/post_tomorrow_task`, tasks
+        ).then((response) => {
+            console.log(response)
+        }).catch(error => {
+            console.error("There was an error fetching the data!", error);
+        });
     }
     const changePriority = (index, addPriority) => {
         let newTasks = tasks.concat();
@@ -77,11 +102,12 @@ export function Tomorrow({tomorrowItems}) {
     }
     const handleAddTask = () => {
         let today = new Date();
-        today.setDate( today.getDate() + 1 );
-        let year = String(today.getFullYear());
-        let month = String(today.getMonth());
-        let date = String(today.getDate());
-        const baseID = year+month+date+"-";
+        let tomorrow = new Date();
+        tomorrow.setDate(today.getDate() + 1);
+        let year = String(tomorrow.getFullYear());
+        let month = String(tomorrow.getMonth());
+        let date = String(tomorrow.getDate());
+        const baseID = year + month + date + "-";
         let newTask = tasks.concat();
         let addedTask = {
             id: "0",
@@ -91,25 +117,25 @@ export function Tomorrow({tomorrowItems}) {
         }
         newTask.push(addedTask);
         for (let i = 0; i < newTask.length; i++) {
-            newTask[i].id = baseID+('00'+(i+1)).slice(-2);
+            newTask[i].id = baseID + ('00' + (i + 1)).slice(-2);
         }
         setTasks(newTask);
     }
     return (<>
-        <h2>明日のタスク</h2>
-        <button onClick={handleAddTask}>タスクの追加</button>
-        {tasks.map((task, index) => {
-            return <TaskLine
+        <div style={{ textAlign: "center" }}>
+            <h2>明日のタスク</h2>
+            <button onClick={handleAddTask}>タスクの追加</button>
+            {tasks.map((task, index) => {
+                return <TaskLine
                     task={task}
                     index={index}
                     changePriority={changePriority}
                     changeTaskTextBox={changeTaskTextBox}
                     key={task.id}
                 />
-        })}
-        <button onClick={handleButtonPush}>完了</button>
+            })}
+            <button onClick={handleButtonPush}>完了</button>
+        </div>
     </>)
 }
-
-
 export default Tomorrow;
