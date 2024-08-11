@@ -1,13 +1,14 @@
-import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
-  Button,
-  TextField
-} from "@mui/material";
+// import {
+//   Accordion,
+//   AccordionDetails,
+//   AccordionSummary,
+//   Button,
+//   TextField
+// } from "@mui/material";
 import { useEffect, useState } from "react";
 import axios from 'axios';
 import { prefixApi } from "./Connector";
+import { Tomorrow } from "./tomorrow";
 
 function App() {
   const initialItems = {
@@ -40,18 +41,25 @@ function App() {
   const [tomorrowItems, setTomorrowItems] = useState(initialItems);
   useEffect(() => {
     //今日のタスクを取得
-    axios.get(`${prefixApi}/get-today-task`)
-      .then(response => {
-        if (response.data) {
-          setTodayItems(response.data);
-        }
-      })
-      .catch(error => {
-        console.error("There was an error fetching the data!", error);
-      });
+    // axios.get(`${prefixApi}/get-task-data`)
+    //   .then(response => {
+    //     if (response.data) {
+    //       setTodayItems(response.data);
+    //     }
+    //   })
+    //   .catch(error => {
+    //     console.error("There was an error fetching the data!", error);
+    //   });
 
     //明日のタスクを取得
-    axios.get(`${prefixApi}/get-tomorrow-task`)
+    let today = new Date();
+    today.setDate( today.getDate() + 1 );
+        let year = String(today.getFullYear());
+        let month = String(today.getMonth());
+        let date = String(today.getDate());
+        const baseID = year+month+date;
+        
+    axios.get(`${prefixApi}/get_task_data/${baseID}`)
       .then(response => {
         if (response.data) {
           setTomorrowItems(response.data);
@@ -67,46 +75,47 @@ function App() {
   }
 
   return (
-    <div className="App">
-      <header className="App-header"></header>
-      <Accordion
-        disableGutters
-        sx={{ borderRadius: 1, ":before": { height: 0 } }}
-      >
-        <AccordionSummary>
-          今日のタスク
-        </AccordionSummary>
-        <AccordionDetails>
-          Todoアプリを完成させる
-        </AccordionDetails>
-      </Accordion>
-      <Accordion
-        disableGutters
-        sx={{ borderRadius: 1, ":before": { height: 0 } }}
-      >
-        <AccordionSummary>
-          明日のタスク
-        </AccordionSummary>
-        <AccordionDetails>
-          Todoアプリを完成させる
-          <TextField
-            value={tomorrowItems.id}
-            onChange={(e) => {
-            }}
-            // sx={{ width: textFieldWidth, ...sx }}
-            inputProps={{
-              style: { textAlign: "center" },
-            }}
-          />
-          <Button
-            // sx={styles.button}
-            onClick={() => handleEdit()}
-          >
-            編集
-          </Button>
-        </AccordionDetails>
-      </Accordion>
-    </div>
+    // <div className="App">
+    //   <header className="App-header"></header>
+    //   <Accordion
+    //     disableGutters
+    //     sx={{ borderRadius: 1, ":before": { height: 0 } }}
+    //   >
+    //     <AccordionSummary>
+    //       今日のタスク
+    //     </AccordionSummary>
+    //     <AccordionDetails>
+    //       Todoアプリを完成させる
+    //     </AccordionDetails>
+    //   </Accordion>
+    //   <Accordion
+    //     disableGutters
+    //     sx={{ borderRadius: 1, ":before": { height: 0 } }}
+    //   >
+    //     <AccordionSummary>
+    //       明日のタスク
+    //     </AccordionSummary>
+    //     <AccordionDetails>
+    //       Todoアプリを完成させる
+    //       <TextField
+    //         value={tomorrowItems.id}
+    //         onChange={(e) => {
+    //         }}
+    //         // sx={{ width: textFieldWidth, ...sx }}
+    //         inputProps={{
+    //           style: { textAlign: "center" },
+    //         }}
+    //       />
+    //       <Button
+    //         // sx={styles.button}
+    //         onClick={() => handleEdit()}
+    //       >
+    //         編集
+    //       </Button>
+    //     </AccordionDetails>
+    //   </Accordion>
+    // </div>
+    <Tomorrow tomorrowItems={tomorrowItems}/>
   );
 }
 

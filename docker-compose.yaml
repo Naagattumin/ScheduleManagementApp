@@ -16,6 +16,7 @@ services:
     ports:
       - "3000:3000"
   db: 
+    platform: linux/x86_64
     container_name: back_db
     image: mysql:5.7
     restart: always
