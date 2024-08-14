@@ -104,23 +104,23 @@ function App() {
 
     // 取りあえずダミーデータを設定 ///////////////////////////
     useEffect(() => {
-      let today = new Date();
+        let today = new Date();
         let year = String(today.getFullYear());
         let month = String("0"+(today.getMonth() + 1)).slice(-2);
-        let date = String( ("0"+today.getDate()).slice(-2));
+        let date = String("0"+today.getDate()).slice(-2);
         const baseID = year+month+date;
-      console.log(baseID)
-      axios.get(`${prefixApi}/get_task_data/${baseID}`)
-      .then(response => {
-        console.log(response)
-        if(response.data){
-          console.log(response.data)
-          setTodayItems(response.data);
-        }
-      })
-      .catch(error => {
-        console.error("There was an error fetching the data!", error);
-      });
+        console.log("baseID: " + baseID)
+        axios.get(`${prefixApi}/get_task_data/${baseID}`)
+        .then(response => {
+            console.log(response)
+            if(response.data){
+            console.log(response.data)
+            setTodayItems(response.data);
+            }
+        })
+        .catch(error => {
+            console.error("There was an error fetching the data!", error);
+        });
         // setTomorrowItems(dummyData);
     }, []);
 
