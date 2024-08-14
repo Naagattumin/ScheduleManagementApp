@@ -11,6 +11,6 @@ COPY . .
  
 RUN npm run build
  
-EXPOSE 3000
+EXPOSE 3001
  
 CMD ["npx", "serve", "-s", "build", "-l", "3000"]

@@ -14,7 +14,7 @@ services:
       context: ./front
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "3001:3000"
   db: 
     container_name: back_db
     image: mysql:5.7
