@@ -12,8 +12,8 @@ class TaskTable(Base):
     contents = Column(String(100), nullable=False)
     priority = Column(Integer, nullable=False)
     progress = Column(Integer, nullable=False)
-    created_at = Column(TIMESTAMP, server_default=func.now(), nullable=False)
-    updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now(), nullable=False)
+    created_at = Column(TIMESTAMP, server_default=func.now(), nullable=False)# pylint: disable=not-callable
+    updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now(), nullable=False)# pylint: disable=not-callable
 
 
 # POSTやPUTのとき受け取るRequest Bodyのモデルを定義
