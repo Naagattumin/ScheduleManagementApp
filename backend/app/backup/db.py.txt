@@ -1,0 +1,52 @@
+# -*- coding: utf-8 -*-
+# DBへの接続設定
+from sqlalchemy import create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, scoped_session
+
+
+# 接続したいDBの基本情報を設定
+user_name = "user"
+password = "password"
+host = "db"  # docker-composeで定義したMySQLのサービス名
+database_name = "sample_db"
+
+# f""みたいな構文。DBの接続情報を設定の文字列を作る。
+# mysql://<ユーザー名>:<パスワード>@<ホスト>/<データベース名>?charset=utf8
+# sqliteなら　'sqlite:///sample.db'（相対パス）とか書くらしい
+DATABASE = 'mysql://%s:%s@%s/%s?charset=utf8' % (
+    user_name,
+    password,
+    host,
+    database_name,
+)
+
+# DBとの接続
+# 多分、ENGINE：接続用のインスタンス
+ENGINE = create_engine(
+    DATABASE,
+    # encoding="utf-8",
+    echo=True
+)
+
+# Sessionの作成
+# sessionは、SQLAlchemyを使用してデータベースとの対話を管理するためのオブジェクトです。具体的には、データベースへのクエリの実行、トランザクションの管理、データの追加・更新・削除などの操作を行います。
+
+# scoped_sessionはスレッドセーフなセッションを提供するために使用されます。これにより、異なるスレッドが同じセッションを共有することなく、独立したセッションを持つことができます。
+session = scoped_session(
+    # ORM実行時の設定。
+    sessionmaker(
+        # 自動コミットしない
+        autocommit=False,
+        # 自動的にデータベースに変更を反映しない
+        autoflush=False,
+        # データベースエンジンを指定
+        bind=ENGINE
+    )
+)
+
+# modelで使用する
+Base = declarative_base()
+# DB接続用のセッションクラス、インスタンスが作成されると接続する
+# 多分おまじない
+Base.query = session.query_property()

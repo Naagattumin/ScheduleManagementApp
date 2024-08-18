@@ -1,34 +1,157 @@
+#　成功例！！！
+
+from sqlalchemy import create_engine, Column, String, Integer, TIMESTAMP, func
+from sqlalchemy.orm import declarative_base
+# from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, scoped_session
+
+from pydantic import BaseModel
+
 from fastapi import FastAPI, HTTPException, Depends
-from sqlalchemy.orm import Session  # Import Session from sqlalchemy.orm
-from db import session
-from model import TaskTable, Task
 from starlette.middleware.cors import CORSMiddleware
 import logging
 from typing import List
 
-app = FastAPI()
 
-# CORSの設定を追加
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"]
+# db-------------------------------
+
+# 接続したいDBの基本情報を設定
+user_name = "user"
+password = "password"
+host = "db"  # docker-composeで定義したMySQLのサービス名
+database_name = "sample_db"
+
+# f""みたいな構文。DBの接続情報を設定の文字列を作る。
+# mysql://<ユーザー名>:<パスワード>@<ホスト>/<データベース名>?charset=utf8
+# sqliteなら　'sqlite:///sample.db'（相対パス）とか書くらしい
+DATABASE = 'mysql://%s:%s@%s/%s?charset=utf8' % (
+    user_name,
+    password,
+    host,
+    database_name,
 )
 
-# データベースセッションを取得するための依存関係
-def get_db():
-    db = session()
-    try:
-        yield db
-    finally:
-        db.close()
+# # DBとの接続
+# # 多分、ENGINE：接続用のインスタンス
+# ENGINE = create_engine(
+#     DATABASE,
+#     # encoding="utf-8",
+#     echo=True
+# )
+
+from sqlalchemy.exc import OperationalError
+import time
+
+DATABASE_URL = "mysql://user:password@db/sample_db"
+DATABASE = "mysql://user:password@db/sample_db"
+
+def connect_with_retry(url, retries=5, delay=5):
+    for _ in range(retries):
+        try:
+            engine = create_engine(url)
+            connection = engine.connect()
+            return engine
+        except OperationalError:
+            print(f"Connection failed, retrying in {delay} seconds...")
+            time.sleep(delay)
+    raise Exception("Failed to connect to the database after several attempts")
+
+
+ENGINE = connect_with_retry(DATABASE_URL)
+
+# Sessionの作成
+# sessionは、SQLAlchemyを使用してデータベースとの対話を管理するためのオブジェクトです。具体的には、データベースへのクエリの実行、トランザクションの管理、データの追加・更新・削除などの操作を行います。
+
+# scoped_sessionはスレッドセーフなセッションを提供するために使用されます。これにより、異なるスレッドが同じセッションを共有することなく、独立したセッションを持つことができます。
+session = scoped_session(
+    # ORM実行時の設定。
+    sessionmaker(
+        # 自動コミットしない
+        autocommit=False,
+        # 自動的にデータベースに変更を反映しない
+        autoflush=False,
+        # データベースエンジンを指定
+        bind=ENGINE
+    )
+)
+
+# modelで使用する
+Base = declarative_base()
+# DB接続用のセッションクラス、インスタンスが作成されると接続する
+# 多分おまじない
+Base.query = session.query_property()
+
+
+# model-------------------------------
+
+# ScheduleManagementApp\mysql\initdb.d\schema.sql でも定義してるけど、mysqlを使うときはここでも定義する必要がある。向こうが必要かは謎。写しミスったときどうなるのかも謎。
+
+# Baseはdb.pyで定義してる。
+# from sqlalchemy.orm import declarative_base
+# Base = declarative_base()
+# なんでここでやらないのかは謎。
+class TaskTable(Base):
+    __tablename__ = 'task'
+
+    id = Column(String(20), primary_key=True, nullable=False)
+    contents = Column(String(100), nullable=False)
+    priority = Column(Integer, nullable=False)
+    progress = Column(Integer, nullable=False)
+    created_at = Column(TIMESTAMP, server_default=func.now(), nullable=False)# pylint: disable=not-callable
+    updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now(), nullable=False)# pylint: disable=not-callable
+
+
+# POSTやPUTのとき受け取るRequest Bodyのモデルを定義
+class Task(BaseModel):
+    id: str
+    contents: str
+    priority: int
+    progress:int
+
+
+# main-------------------------------
+
+app = FastAPI()
+
+# # テーブルの定義
+# class Task(Base):
+#     __tablename__ = 'task'
+#     id = Column(String(20), primary_key=True, nullable=False)
+#     contents = Column(String(100), nullable=False)
+#     priority = Column(Integer, nullable=False)
+#     progress = Column(Integer, nullable=False)
+#     created_at = Column(TIMESTAMP, server_default=func.current_timestamp(), nullable=False)
+#     updated_at = Column(TIMESTAMP, server_default=func.current_timestamp(), onupdate=func.current_timestamp(), nullable=False)
+
+# テーブルの作成（必要に応じて）
+Base.metadata.create_all(ENGINE)
+
+# サンプルデータの挿入
+task1 = TaskTable(id='1', contents='Task 1', priority=1, progress=1)
+task2 = TaskTable(id='2', contents='Task 2', priority=2, progress=2)
+
+session.add(task1)
+session.add(task2)
+session.commit()
+
+# データのクエリtest
+tasks = session.query(TaskTable).all()
+for task in tasks:
+    def print_colored_and_styled(text, color_code, style_code):
+        print(f"\033[{style_code};{color_code}m{text}\033[0m")
+    print_colored_and_styled("!!!!!!!!!!!!!!", 31, 4)
+    print(task.id, task.contents, task.priority, task.progress)
+
+
+
+
 
 @app.get("/get_task_data/{date}")
 def get_task_data(date: str):
     try:
         logging.info(f"Fetching tasks for date: {date}")
+        # id.like(文字列)で、その文字列を含むidを持つデータをフィルタリングする
+        # all()で、フィルタリングされた全てのデータをリストとして取得する
         tasks = session.query(TaskTable).filter(TaskTable.id.like(f'%{date}%')).all()
         return tasks
     except Exception as e:
@@ -39,6 +162,7 @@ def get_task_data(date: str):
 def insert_task_data(request_data: List[Task]):
     tasks_to_insert = []
     for task_data in request_data:
+        # 例えば、session.add(task) とかで、taskをDBに追加できる
         task = TaskTable(
             id=task_data.id,
             contents=task_data.contents,
