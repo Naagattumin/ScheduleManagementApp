@@ -113,34 +113,34 @@ class Task(BaseModel):
 
 app = FastAPI()
 
-# # テーブルの定義
-# class Task(Base):
-#     __tablename__ = 'task'
-#     id = Column(String(20), primary_key=True, nullable=False)
-#     contents = Column(String(100), nullable=False)
-#     priority = Column(Integer, nullable=False)
-#     progress = Column(Integer, nullable=False)
-#     created_at = Column(TIMESTAMP, server_default=func.current_timestamp(), nullable=False)
-#     updated_at = Column(TIMESTAMP, server_default=func.current_timestamp(), onupdate=func.current_timestamp(), nullable=False)
+# CORSの設定を追加。全部ワイルドカード。
+# 多分、本当は allow_origins=["http://localhost:3001"] みたく書く。
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
 
-# テーブルの作成（必要に応じて）
+# テーブルの作成（dockerが作ってなければ）
 Base.metadata.create_all(ENGINE)
 
-# サンプルデータの挿入
+# サンプルデータの挿入###################
 task1 = TaskTable(id='1', contents='Task 1', priority=1, progress=1)
 task2 = TaskTable(id='2', contents='Task 2', priority=2, progress=2)
 
-session.add(task1)
-session.add(task2)
-session.commit()
+session.add(task1)#########
+session.add(task2)########
+session.commit()###########
 
-# データのクエリtest
+# データのクエリtest###########
 tasks = session.query(TaskTable).all()
-for task in tasks:
+for x in tasks:
     def print_colored_and_styled(text, color_code, style_code):
         print(f"\033[{style_code};{color_code}m{text}\033[0m")
     print_colored_and_styled("!!!!!!!!!!!!!!", 31, 4)
-    print(task.id, task.contents, task.priority, task.progress)
+    print(x.id, x.contents, x.priority, x.progress)
 
 
 
@@ -149,17 +149,18 @@ for task in tasks:
 @app.get("/get_task_data/{date}")
 def get_task_data(date: str):
     try:
-        logging.info(f"Fetching tasks for date: {date}")
+        logging.info("Fetching tasks for date: %s", date)
         # id.like(文字列)で、その文字列を含むidを持つデータをフィルタリングする
         # all()で、フィルタリングされた全てのデータをリストとして取得する
         tasks = session.query(TaskTable).filter(TaskTable.id.like(f'%{date}%')).all()
         return tasks
     except Exception as e:
-        logging.error(f"Error fetching tasks: {e}")
+        logging.error("Error fetching tasks: %s", e)
         raise HTTPException(status_code=500, detail="Failed to fetch tasks")
 
 @app.post("/post_tomorrow_task")
 def insert_task_data(request_data: List[Task]):
+    print("🐾post_tomorrow_task🐾")##########
     tasks_to_insert = []
     for task_data in request_data:
         # 例えば、session.add(task) とかで、taskをDBに追加できる
@@ -172,10 +173,12 @@ def insert_task_data(request_data: List[Task]):
         tasks_to_insert.append(task)
     
     try:
+        print("🐾post_tomorrow_task/try🐾")##########
         session.add_all(tasks_to_insert)
         session.commit()
         return {"message": "Tasks inserted successfully"}
     except Exception as e:
+        print("🐾post_tomorrow_task/except🐾")##########
         session.rollback()
         logging.error(f"Error inserting tasks: {e}")
         raise HTTPException(status_code=500, detail="Failed to insert tasks")

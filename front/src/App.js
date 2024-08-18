@@ -108,7 +108,8 @@ function App() {
         let year = String(today.getFullYear());
         let month = String("0"+(today.getMonth() + 1)).slice(-2);
         let date = String("0"+today.getDate()).slice(-2);
-        const baseID = year+month+date;
+        const baseID = 1;///////////
+        // const baseID = year+month+date;
         console.log("baseID: " + baseID)
         axios.get(`${prefixApi}/get_task_data/${baseID}`)
         .then(response => {
@@ -143,7 +144,7 @@ function App() {
 
     return (
         <>
-            <h1 style={{ textAlign: "center" }}>{today}のタスク</h1>
+            <h1 style={{ textAlign: "center" }}>{today}のタスク1</h1>
             {todayItems.map((task, index) => (
             <ul style={{ textAlign: "center" }}>
                 <li style={{ display: "inline-block", width: "10%"}}>優先度： {task.priority}  </li>
@@ -154,9 +155,8 @@ function App() {
                 <button className="square" style={{ display: "inline-block", width: "5ch"}} onClick={() => proPlusHandleClick(index)}>+</button>
             </ul>
             ))}
-            
         </>
-    )
+    )///////////
 
 
     // return (
