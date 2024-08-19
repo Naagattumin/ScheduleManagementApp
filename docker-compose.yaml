@@ -30,6 +30,6 @@ services:
     ports: 
       - 3306:3306
     command: --port 3306
-    volumes: 
+    volumes:
       - ./mysql/initdb.d:/docker-entrypoint-initdb.d
-      - ./mysql/conf.d:/etc/myaql/conf.d
+      - ./mysql/conf.d/my.cnf:/etc/mysql/my.cnf

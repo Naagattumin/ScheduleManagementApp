@@ -24,12 +24,13 @@ database_name = "sample_db"
 # f""みたいな構文。DBの接続情報を設定の文字列を作る。
 # mysql://<ユーザー名>:<パスワード>@<ホスト>/<データベース名>?charset=utf8
 # sqliteなら　'sqlite:///sample.db'（相対パス）とか書くらしい
+# user_name, password, host, database_nameは、上で設定したもの。
 DATABASE = 'mysql://%s:%s@%s/%s?charset=utf8' % (
     user_name,
     password,
     host,
     database_name,
-)
+)#########utf8mb4にする？
 
 # # DBとの接続
 # # 多分、ENGINE：接続用のインスタンス
@@ -39,11 +40,14 @@ DATABASE = 'mysql://%s:%s@%s/%s?charset=utf8' % (
 #     echo=True
 # )
 
+
+# .connect()が成功しなかったら、5秒待ってリトライする。5回リトライしてもダメだったらエラーを出す。
+# 多分、DBが立ち上がる前にアクセスしようとして失敗してた。それをリトライしてる。
 from sqlalchemy.exc import OperationalError
 import time
 
-DATABASE_URL = "mysql://user:password@db/sample_db"
-DATABASE = "mysql://user:password@db/sample_db"
+DATABASE_URL = "mysql://user:password@db/sample_db?charset=utf8mb4"
+DATABASE = "mysql://user:password@db/sample_db?charset=utf8mb4"
 
 def connect_with_retry(url, retries=5, delay=5):
     for _ in range(retries):
@@ -89,7 +93,6 @@ Base.query = session.query_property()
 # Baseはdb.pyで定義してる。
 # from sqlalchemy.orm import declarative_base
 # Base = declarative_base()
-# なんでここでやらないのかは謎。
 class TaskTable(Base):
     __tablename__ = 'task'
 
