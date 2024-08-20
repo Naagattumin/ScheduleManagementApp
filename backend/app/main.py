@@ -1,4 +1,4 @@
-#　成功例！！！
+# pylint: disable=logging-fstring-interpolation
 
 from sqlalchemy import create_engine, Column, String, Integer, TIMESTAMP, func
 from sqlalchemy.orm import declarative_base
@@ -7,10 +7,18 @@ from sqlalchemy.orm import sessionmaker, scoped_session
 
 from pydantic import BaseModel
 
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException
 from starlette.middleware.cors import CORSMiddleware
+
 import logging
+logging = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG, format="🐾%(asctime)s [%(levelname)s] %(pathname)s %(lineno)d %(funcName)s| %(message)s", datefmt="%y%m%d_%H%M%S")
+logger = logging
+
 from typing import List
+
+import datetime
+logger.debug(f"backendの時刻確認: {datetime.datetime.now()}")##########
 
 
 # db-------------------------------
@@ -25,12 +33,12 @@ database_name = "sample_db"
 # mysql://<ユーザー名>:<パスワード>@<ホスト>/<データベース名>?charset=utf8
 # sqliteなら　'sqlite:///sample.db'（相対パス）とか書くらしい
 # user_name, password, host, database_nameは、上で設定したもの。
-DATABASE = 'mysql://%s:%s@%s/%s?charset=utf8' % (
+DATABASE = 'mysql://%s:%s@%s/%s?charset=utf8mb4' % (
     user_name,
     password,
     host,
     database_name,
-)#########utf8mb4にする？
+)
 
 # # DBとの接続
 # # 多分、ENGINE：接続用のインスタンス
@@ -46,22 +54,21 @@ DATABASE = 'mysql://%s:%s@%s/%s?charset=utf8' % (
 from sqlalchemy.exc import OperationalError
 import time
 
-DATABASE_URL = "mysql://user:password@db/sample_db?charset=utf8mb4"
-DATABASE = "mysql://user:password@db/sample_db?charset=utf8mb4"
 
-def connect_with_retry(url, retries=5, delay=5):
+def create_engine_with_retry(url, retries=5, delay=5):
     for _ in range(retries):
         try:
-            engine = create_engine(url)
-            connection = engine.connect()
+            engine = create_engine(url, echo=True)
+            tmpTestConnection = engine.connect()
             return engine
         except OperationalError:
-            print(f"Connection failed, retrying in {delay} seconds...")
+            logger.warning(f"!!!Connection failed, retrying in {delay} seconds...")
             time.sleep(delay)
-    raise Exception("Failed to connect to the database after several attempts")
+    logger.error("Failed to connect to the database after several attempts")
+    raise OperationalError("!!!Failed to connect to the database after several attempts", params=None, orig=None)
 
 
-ENGINE = connect_with_retry(DATABASE_URL)
+ENGINE = create_engine_with_retry(DATABASE)
 
 # Sessionの作成
 # sessionは、SQLAlchemyを使用してデータベースとの対話を管理するためのオブジェクトです。具体的には、データベースへのクエリの実行、トランザクションの管理、データの追加・更新・削除などの操作を行います。
@@ -138,15 +145,9 @@ session.add(task2)########
 session.commit()###########
 
 # データのクエリtest###########
-tasks = session.query(TaskTable).all()
-for x in tasks:
-    def print_colored_and_styled(text, color_code, style_code):
-        print(f"\033[{style_code};{color_code}m{text}\033[0m")
-    print_colored_and_styled("!!!!!!!!!!!!!!", 31, 4)
-    print(x.id, x.contents, x.priority, x.progress)
-
-
-
+tmpTasks = session.query(TaskTable).all()
+for x in tmpTasks:
+    logger.debug(f"{x.id}, {x.contents}, {x.priority}, {x.progress}")
 
 
 @app.get("/get_task_data/{date}")
@@ -158,12 +159,12 @@ def get_task_data(date: str):
         tasks = session.query(TaskTable).filter(TaskTable.id.like(f'%{date}%')).all()
         return tasks
     except Exception as e:
-        logging.error("Error fetching tasks: %s", e)
-        raise HTTPException(status_code=500, detail="Failed to fetch tasks")
+        logging.error("!!!Error fetching tasks: %s", e)
+        raise HTTPException(status_code=500, detail="Failed to fetch tasks")from e
 
 @app.post("/post_tomorrow_task")
 def insert_task_data(request_data: List[Task]):
-    print("🐾post_tomorrow_task🐾")##########
+    logger.debug("post_tomorrow_task")##########
     tasks_to_insert = []
     for task_data in request_data:
         # 例えば、session.add(task) とかで、taskをDBに追加できる
@@ -174,17 +175,17 @@ def insert_task_data(request_data: List[Task]):
             progress=task_data.progress,
         )
         tasks_to_insert.append(task)
-    
+
     try:
-        print("🐾post_tomorrow_task/try🐾")##########
+        logger.debug("post_tomorrow_task/try")##########
         session.add_all(tasks_to_insert)
         session.commit()
         return {"message": "Tasks inserted successfully"}
     except Exception as e:
-        print("🐾post_tomorrow_task/except🐾")##########
+        logger.debug("post_tomorrow_task/except")##########
         session.rollback()
         logging.error(f"Error inserting tasks: {e}")
-        raise HTTPException(status_code=500, detail="Failed to insert tasks")
+        raise HTTPException(status_code=500, detail="Failed to insert tasks") from e
 
 @app.post("/post_deleted_task")
 def delete_task_data(request_data: Task):
@@ -205,7 +206,7 @@ def delete_task_data(request_data: Task):
     except Exception as e:
         session.rollback()
         logging.error(f"Error deleting task: {e}")
-        raise HTTPException(status_code=500, detail="Failed to delete task")
+        raise HTTPException(status_code=500, detail="Failed to delete task") from e
     finally:
         session.close()
     
@@ -225,4 +226,4 @@ def post_achievment(request_data: Task):
     except Exception as e:
         session.rollback()
         logging.error(f"Error updating task: {e}")
-        raise HTTPException(status_code=500, detail="Failed to update task")
+        raise HTTPException(status_code=500, detail="Failed to update task") from e

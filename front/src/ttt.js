@@ -114,7 +114,7 @@ export default function Tomorrow({ tomorrowItems }) {
             // 日付の後ろに添え字＋１つけてる
             newTask[i].id = baseID + ('00' + (i + 1)).slice(-2);
 
-            console.log("handleAddTask_newTask[i].id: " + newTask[i].id);////////////
+            console.log("!!!handleAddTask_newTask[i].id: " + newTask[i].id);////////////
         }
 
         setTasks(newTask);
@@ -124,7 +124,8 @@ export default function Tomorrow({ tomorrowItems }) {
     const handleButtonPush = () => {
         // タスクのポスト
         // axios.post();
-        console.log(tasks);///////////
+        console.log("🐾handleButtonPush🐾", tasks);///////////
+        //console.log(tasks);///////////
 
         axios.post(`${prefixApi}/post_tomorrow_task/`, tasks)
         .then(response => {
@@ -134,7 +135,7 @@ export default function Tomorrow({ tomorrowItems }) {
             }
         })
         .catch(error => {
-            console.error("There was an error post_tomorrow_task!", error);
+            console.error("!!!There was an error post_tomorrow_task!", error);
         });
     }
 

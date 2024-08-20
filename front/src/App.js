@@ -113,14 +113,14 @@ function App() {
         console.log("baseID: " + baseID)
         axios.get(`${prefixApi}/get_task_data/${baseID}`)
         .then(response => {
-            console.log(response)
+            console.log("🐾useEffect then1🐾", response)//////////
             if(response.data){
-            console.log(response.data)
+            console.log("🐾useEffect then2🐾", response.data)//////////
             setTodayItems(response.data);
             }
         })
         .catch(error => {
-            console.error("There was an error fetching the data!", error);
+            console.error("!!!There was an error fetching the data!", error);
         });
         // setTomorrowItems(dummyData);
     }, []);

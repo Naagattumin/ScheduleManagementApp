@@ -1,35 +1,41 @@
 version: '3.8'
- 
+
 services:
-  backend:
-    depends_on:
-        - db
-    links:
-        - db
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    ports:
-      - "8080:8000"
-  frontend:
-    build:
-      context: ./front
-      dockerfile: Dockerfile
-    ports:
-      - "3001:3001"
-  db: 
-    container_name: back_db
-    image: mysql:5.7
-    restart: always
-    tty: true
-    environment:
-      MYSQL_DATABASE: sample_db
-      MYSQL_USER: user
-      MYSQL_PASSWORD: password
-      MYSQL_ROOT_PASSWORD: password
-    ports: 
-      - 3306:3306
-    command: --port 3306
-    volumes:
-      - ./mysql/initdb.d:/docker-entrypoint-initdb.d
-      - ./mysql/conf.d/my.cnf:/etc/mysql/my.cnf
+    backend:
+        container_name: backend
+        depends_on:
+            - db
+        links:
+            - db
+        build:
+            context: ./backend
+            dockerfile: Dockerfile
+        environment:
+            - TZ=Asia/Tokyo
+        ports:
+            - "8080:8000"
+    frontend:
+        container_name: frontend
+        build:
+            context: ./front
+            dockerfile: Dockerfile
+        environment:
+            - TZ=Asia/Tokyo
+        ports:
+            - "3001:3001"
+    db:
+        container_name: back_db
+        image: mysql:5.7
+        restart: always
+        tty: true
+        environment:
+            MYSQL_DATABASE: sample_db
+            MYSQL_USER: user
+            MYSQL_PASSWORD: password
+            MYSQL_ROOT_PASSWORD: password - TZ=Asia/Tokyo
+        ports:
+            - 3306:3306
+        command: --port 3306
+        volumes:
+            - ./mysql/initdb.d:/docker-entrypoint-initdb.d
+            - ./mysql/conf.d/my.cnf:/etc/mysql/my.cnf
