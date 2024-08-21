@@ -1,5 +1,6 @@
 CREATE TABLE task (
     id VARCHAR(20) NOT NULL,
+    exec_date VARCHAR(20) NOT NULL,
     contents VARCHAR(100) NOT NULL,
     priority INT NOT NULL,
     progress INT NOT NULL,

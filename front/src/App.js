@@ -102,7 +102,7 @@ function App() {
     //     });
     // }, []);///////////ここが空なら最初に実行？
 
-    // 取りあえずダミーデータを設定 ///////////////////////////
+
     useEffect(() => {
         let today = new Date();
         let year = String(today.getFullYear());
@@ -122,7 +122,6 @@ function App() {
         .catch(error => {
             console.error("!!!There was an error fetching the data!", error);
         });
-        // setTomorrowItems(dummyData);
     }, []);
 
     function proMinusHandleClick(index) {
