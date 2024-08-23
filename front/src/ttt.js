@@ -87,6 +87,7 @@ export default function Tomorrow({ tomorrowItems }) {
         // null回避のための初期化用タスク
         let addedTask = {
             id: Date.now(),
+            exec_date: "",
             priority: 0,
             contents: "",
             progress: 0,
