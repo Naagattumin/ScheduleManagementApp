@@ -40,7 +40,26 @@ import { prefixApi } from "./Connector";
 // export default App;
 
 
-function App() {
+
+function GetToday() {
+    let today = new Date();
+    today.setDate(today.getDate());
+    let year = String(today.getFullYear());
+    let month = String("0"+(today.getMonth() + 1)).slice(-2);
+    let date = String("0"+today.getDate()).slice(-2);
+    return year + month + date
+}
+
+function GetTommorow() {
+    let today = new Date();
+    let tomorrow = today.setDate(today.getDate() + 1);
+    let year = String(tomorrow.getFullYear());
+    let month = String("0"+(tomorrow.getMonth() + 1)).slice(-2);
+    let date = String("0"+tomorrow.getDate()).slice(-2);
+    return year + month + date
+}
+
+export default function App() {
     const today = new Date().toLocaleDateString();
 
 
@@ -50,17 +69,20 @@ function App() {
     //     column-gap: 10px;
     // }
     const dummyData = [{
-        id: "20240811-01",
+        id: "1724236965191",
+        exec_date: "20240811",
         priority: 5,
         contents: "TodoAppの実装",
         progress: 4,
     }, {
-        id: "20240811-02",
+        id: "1724236965193",
+        exec_date: "20240811",
         priority: 4,
         contents: "選択",
         progress: 3,
     }, {
-        id: "20240811-03",
+        id: "1724236965192",
+        exec_date: "20240811",
         priority: 1,
         contents: "掃除",
         progress: 1,
@@ -68,6 +90,7 @@ function App() {
 
     const initialItems = [{
       id: "",
+      exec_date: "",
       priority: "",
       contents: "",
       progress: "",
@@ -104,55 +127,60 @@ function App() {
 
 
     useEffect(() => {
-        let today = new Date();
-        let year = String(today.getFullYear());
-        let month = String("0"+(today.getMonth() + 1)).slice(-2);
-        let date = String("0"+today.getDate()).slice(-2);
-        const baseID = 1;///////////
-        // const baseID = year+month+date;
-        console.log("baseID: " + baseID)
-        axios.get(`${prefixApi}/get_task_data/${baseID}`)
-        .then(response => {
-            console.log("🐾useEffect then1🐾", response)//////////
-            if(response.data){
-            console.log("🐾useEffect then2🐾", response.data)//////////
-            setTodayItems(response.data);
-            }
-        })
-        .catch(error => {
-            console.error("!!!There was an error fetching the data!", error);
-        });
+        let todayDate = GetToday();
+        console.log("todayDate: " + todayDate);
+        axios.get(`${prefixApi}/get_task_data/${todayDate}`)
+            .then(response => {
+                console.log("🐾useEffect then1🐾", response);//////////
+                if(response.data){
+                    console.log("🐾useEffect then2🐾", response.data);//////////
+                    setTodayItems(response.data);
+                }
+            })
+            .catch(error => {
+                console.error("🐾There was an error fetching the data!", error);
+            });
     }, []);
 
-    function proMinusHandleClick(index) {
-        let nextTodayItems = [...todayItems];
-        if (nextTodayItems[index].progress > 0){
-            --nextTodayItems[index].progress;
-            setTodayItems(nextTodayItems);
+    function OnClickProg(index, num) {
+        if (num == -1){
+            if (todayItems[index].progress > 0){
+                let nextTodayItems = [...todayItems];
+                --nextTodayItems[index].progress;
+                setTodayItems(nextTodayItems);
+            }
+        } else if (num == 1){
+            if (todayItems[index].progress < 5){
+                let nextTodayItems = [...todayItems];
+                ++nextTodayItems[index].progress;
+                setTodayItems(nextTodayItems);
+            }
         }
     }
 
-    function proPlusHandleClick(index) {
-        let nextTodayItems = [...todayItems];
-        if (nextTodayItems[index].progress < 5){
-            ++nextTodayItems[index].progress;
-            setTodayItems(nextTodayItems);
-        }
-
+    function OnClickHello() {
+        axios.get(`${prefixApi}/hello`)
+        .then(response => {
+            console.log("🐾OnClickHello.then", response.data.message)
+        })
+        .catch(error => {
+            console.error("There was an error fetching the data!", error);
+        });
     }
 
     return (
         <>
             <h1 style={{ textAlign: "center" }}>{today}のタスク1</h1>
+            <button onClick={() => {OnClickHello()}}>Hello</button>
             {todayItems.map((task, index) => (
-            <ul style={{ textAlign: "center" }}>
-                <li style={{ display: "inline-block", width: "10%"}}>優先度： {task.priority}  </li>
-                <li style={{ display: "inline-block", width: "30%"}}>{task.contents}  </li>
-                <li style={{ display: "inline-block", width: "8ch"}}>進捗： </li>
-                <button className="square" style={{ display: "inline-block", width: "5ch"}} onClick={() => proMinusHandleClick(index)}>-</button>
-                <li style={{ display: "inline-block", width: "5ch"}}>{task.progress}  </li>
-                <button className="square" style={{ display: "inline-block", width: "5ch"}} onClick={() => proPlusHandleClick(index)}>+</button>
-            </ul>
+                <ul style={{ textAlign: "center" }}>
+                    <li style={{ display: "inline-block", width: "10%"}}>優先度： {task.priority}  </li>
+                    <li style={{ display: "inline-block", width: "30%"}}>{task.contents}  </li>
+                    <li style={{ display: "inline-block", width: "8ch"}}>進捗： </li>
+                    <button className="square" style={{ display: "inline-block", width: "5ch"}} onClick={() => OnClickProg(index, -1)}>-</button>
+                    <li style={{ display: "inline-block", width: "5ch"}}>{task.progress}  </li>
+                    <button className="square" style={{ display: "inline-block", width: "5ch"}} onClick={() => OnClickProg(index, 1)}>+</button>
+                </ul>
             ))}
         </>
     )///////////
@@ -175,7 +203,6 @@ function App() {
     // );
 }
 
-export default App;
 
 
 

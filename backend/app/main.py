@@ -20,7 +20,7 @@ mylog.addHandler(handler)
 from typing import List
 
 import datetime
-mylog.debug(f"backendの時刻確認: {datetime.datetime.now()}")##########
+mylog.debug(f"backendの時刻確認: {datetime.datetime.now()}")
 
 
 # db-------------------------------
@@ -169,6 +169,12 @@ def epoch_to_datetime(epoch, tomorrow=0):
     except (ValueError, OSError) as e:
         raise ValueError(f"Invalid epoch format: {epoch}") from e
 
+@app.get("/hello")
+def hello():
+    mylog.debug("hello")
+    return {"message": "Hellow Wordld"}
+
+
 
 @app.get("/get_task_data/{date}")
 def get_task_data(date: str):
@@ -176,7 +182,7 @@ def get_task_data(date: str):
         mylog.info("Fetching tasks for date: %s", date)
         # id.like(文字列)で、その文字列を含むidを持つデータをフィルタリングする
         # all()で、フィルタリングされた全てのデータをリストとして取得する
-        tasks = session.query(TaskTable).filter(TaskTable.id.like(f'%{date}%')).all()
+        tasks = session.query(TaskTable).filter(TaskTable.exec_date.like(f'%{date}%')).all()
         return tasks
     except Exception as e:
         mylog.error("Error fetching tasks: %s", e)
@@ -184,11 +190,12 @@ def get_task_data(date: str):
 
 @app.post("/post_tomorrow_task")
 def insert_task_data(request_data: List[Task]):
-    mylog.debug("post_tomorrow_task")##########
+    mylog.debug("post_tomorrow_task")
+
     tasks_to_insert = []
     for task_data in request_data:
-        mylog.debug(f"task_data: {task_data}")##########
-        tmp_exec_date = epoch_to_datetime(task_data.id, 0).strftime("%Y-%m-%d")# デバグのためtommorow=0にしてる########
+        tmp_exec_date = epoch_to_datetime(time.time(), 0).strftime("%Y%m%d")# デバグのためtommorow=0にしてる########
+
         # 例えば、session.add(task) とかで、taskをDBに追加できる
         task = TaskTable(
             id = task_data.id,
@@ -197,8 +204,9 @@ def insert_task_data(request_data: List[Task]):
             priority=task_data.priority,
             progress=task_data.progress,
         )
-        mylog.debug(f"epoch: {task_data.id}, date: {epoch_to_datetime(task_data.id)}")##########
+
         same_date_tasks = session.query(TaskTable).filter(TaskTable.exec_date == tmp_exec_date).all()
+
         flag = 0
         for task in same_date_tasks:
             if task.contents == task_data.contents:
@@ -208,12 +216,12 @@ def insert_task_data(request_data: List[Task]):
             tasks_to_insert.append(task)
 
     try:
-        mylog.debug("post_tomorrow_task/try")##########
+        mylog.debug("post_tomorrow_task/try")
         session.add_all(tasks_to_insert)
         session.commit()
         return {"message": "Tasks inserted successfully"}
     except Exception as e:
-        mylog.debug("post_tomorrow_task/except")##########
+        mylog.debug("post_tomorrow_task/except")
         session.rollback()
         mylog.error(f"Error inserting tasks: {e}")
         raise HTTPException(status_code=500, detail="Failed to insert tasks") from e
@@ -240,7 +248,7 @@ def delete_task_data(request_data: Task):
         raise HTTPException(status_code=500, detail="Failed to delete task") from e
     finally:
         session.close()
-    
+
 @app.post("/post_achievment/{data}")
 def post_achievment(request_data: Task):
     try:
