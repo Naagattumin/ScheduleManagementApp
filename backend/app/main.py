@@ -20,7 +20,9 @@ mylog.addHandler(handler)
 from typing import List
 
 import datetime
-mylog.debug(f"backendの時刻確認: {datetime.datetime.now()}")
+mylog.debug(f"backendの時刻確認1: {datetime.datetime.now()}")
+
+
 
 
 # db-------------------------------
@@ -31,31 +33,26 @@ password = "password"
 host = "db"  # docker-composeで定義したMySQLのサービス名
 database_name = "sample_db"
 
-# f""みたいな構文。DBの接続情報を設定の文字列を作る。
+
 # mysql://<ユーザー名>:<パスワード>@<ホスト>/<データベース名>?charset=utf8
 # sqliteなら　'sqlite:///sample.db'（相対パス）とか書くらしい
 # user_name, password, host, database_nameは、上で設定したもの。
-DATABASE = 'mysql://%s:%s@%s/%s?charset=utf8mb4' % (
-    user_name,
-    password,
-    host,
-    database_name,
-)
+DATABASE = f"mysql://{user_name}:{password}@{host}/{database_name}?charset=utf8mb4"
 
-# # DBとの接続
-# # 多分、ENGINE：接続用のインスタンス
-# ENGINE = create_engine(
-#     DATABASE,
-#     # encoding="utf-8",
-#     echo=True
-# )
+# f""みたいな構文。DBの接続情報を設定の文字列を作る。
+# DATABASE = 'mysql://%s:%s@%s/%s?charset=utf8mb4' % (
+#     user_name,
+#     password,
+#     host,
+#     database_name,)
 
 
+
+# DBとの接続
 # .connect()が成功しなかったら、5秒待ってリトライする。5回リトライしてもダメだったらエラーを出す。
-# 多分、DBが立ち上がる前にアクセスしようとして失敗してた。それをリトライしてる。
+# 多分、DBが立ち上がる前にアクセスしようとして失敗してた。それをリトライするように変更した。
 from sqlalchemy.exc import OperationalError
 import time
-
 
 def create_engine_with_retry(url, retries=5, delay=5):
     for _ in range(retries):
@@ -69,8 +66,16 @@ def create_engine_with_retry(url, retries=5, delay=5):
     mylog.error("Failed to connect to the database after several attempts")
     raise OperationalError("!!!Failed to connect to the database after several attempts", params=None, orig=None)
 
-
 ENGINE = create_engine_with_retry(DATABASE)
+
+# # DBとの接続
+# # 多分、ENGINE：接続用のインスタンス
+# ENGINE = create_engine(
+#     DATABASE,
+#     # encoding="utf-8",
+#     echo=True
+# )
+
 
 # Sessionの作成
 # sessionは、SQLAlchemyを使用してデータベースとの対話を管理するためのオブジェクトです。具体的には、データベースへのクエリの実行、トランザクションの管理、データの追加・更新・削除などの操作を行います。
@@ -88,22 +93,28 @@ session = scoped_session(
     )
 )
 
-# modelで使用する
-Base = declarative_base()
-# DB接続用のセッションクラス、インスタンスが作成されると接続する
-# 多分おまじない
-Base.query = session.query_property()
+
 
 
 # model-------------------------------
 
-# ScheduleManagementApp\mysql\initdb.d\schema.sql でも定義してるけど、mysqlを使うときはここでも定義する必要がある。向こうが必要かは謎。写しミスったときどうなるのかも謎。
+# Baseは、SQLAlchemyのdeclarative_base関数を使用して作成される基本クラスです。このクラスを継承することで、データベーステーブルとマッピングされるモデルクラスを定義することができます。
+Base = declarative_base()
 
-# Baseはdb.pyで定義してる。
-# from sqlalchemy.orm import declarative_base
-# Base = declarative_base()
+# DB接続用のセッションクラス、インスタンスが作成されると接続する
+# session.query(TaskTable).filter みたいな書き方だけでなく TaskTable.query.filter みたいなのも使えるようになる
+Base.query = session.query_property()
+
+# ScheduleManagementApp\mysql\initdb.d\schema.sql でも定義してるけど、mysqlを使うときはここでも定義する必要がある。両方必要で、矛盾があるとエラーになる。
 class TaskTable(Base):
-    """テーブルの定義。テーブル名: task"""
+    """session.add(task) とかでDBに追加するとき、このクラスを引数にする。後で Base.metadata.create_all(ENGINE) でテーブルを作成する。
+
+    Args:
+        Base (？): Base = declarative_base() で作ったやつ
+
+    Returns:
+        task1 = TaskTable(id='1', exec_date = "2024-01-01", contents='Task 1', priority=1, progress=1) や session.add(task) みたいな感じで使う
+    """
     __tablename__ = 'task'
 
     id = Column(String(20), primary_key=True, nullable=False)
@@ -115,21 +126,30 @@ class TaskTable(Base):
     updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now(), nullable=False)# pylint: disable=not-callable
 
 
-# POSTやPUTのとき受け取るRequest Bodyのモデルを定義
 class Task(BaseModel):
-    id: str
+    """POSTやPUTのとき受け取る Request Body のモデルを定義。@app.post("/~~~)↓ def post_tasks(tasks: List[Task]): みたいな感じで使う。pydantic は型を厳密にするやつらしい。型が厳密じゃないとセキュリティインシデントだかになるらしい。
+
+    Args:
+        BaseModel (？): from pydantic import BaseModel でインポートしたやつ
+    """
+    id: int
     exec_date: str
     contents: str
     priority: int
     progress:int
 
 
+
+
 # main-------------------------------
 
 app = FastAPI()
 
-# CORSの設定を追加。全部ワイルドカード。
-# 多分、本当は allow_origins=["http://localhost:3001"] みたく書く。
+# CORSの設定を追加（多分、fastapiの機能）。今回は全部ワイルドカード。
+# 例えば、https://www.google.com/~~~ の中で実行されたスクリプトは https://www.google.com/~~~ にしかアクセスできません。
+# 他のサイト（例： https://api.example.com ）にアクセスするには、そのアクセス先のサイト（ https://api.example.com ）がCORSを許可している必要があります。
+# ここでは、すべてのオリジンからのリクエストを許可する設定をしていますが、本番環境では特定のオリジンのみを許可することが推奨されます。
+# 本当は、例えば allow_origins=["http://localhost:3001", "https://www.google.com"] のように書くべきです。
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -158,7 +178,15 @@ for x in tmpTasks:
 
 
 def epoch_to_datetime(epoch, tomorrow=0):
-    """午前4時に日付が変わるようにずれた日時を返す。返り値は日付のみを使うこと。tomorrow=1なら翌日の日付を返す。"""
+    """午前4時に日付が変わるようにずれた日時を返す。返り値は日付のみを使うこと。
+
+    Args:
+        epoch (int, str): エポック秒またはエポックミリ秒。
+        tomorrow (int, optional): tomorrow=1 なら翌日の日付を返す. Defaults to 0.
+
+    return:
+        datetime.datetime: 日付のみを使うこと
+    """
     assert tomorrow in (0, 1)
     epoch = int(epoch)
     if epoch > 1e10:
@@ -169,51 +197,64 @@ def epoch_to_datetime(epoch, tomorrow=0):
     except (ValueError, OSError) as e:
         raise ValueError(f"Invalid epoch format: {epoch}") from e
 
+
+
 @app.get("/hello")
 def hello():
     mylog.debug("hello")
     return {"message": "Hellow Wordld"}
 
+@app.get
 
 
-@app.get("/get_task_data/{date}")
-def get_task_data(date: str):
+@app.get("/get_task_data/{epoch}")
+def get_task_data(epoch: str):
     try:
-        mylog.info("Fetching tasks for date: %s", date)
         # id.like(文字列)で、その文字列を含むidを持つデータをフィルタリングする
         # all()で、フィルタリングされた全てのデータをリストとして取得する
+        date = epoch_to_datetime(epoch, 0).strftime("%Y%m%d")
         tasks = session.query(TaskTable).filter(TaskTable.exec_date.like(f'%{date}%')).all()
+        mylog.info(f"Fetching tasks for date: {date}")
+        for task in tasks:########
+            print(task.__dict__)
         return tasks
     except Exception as e:
         mylog.error("Error fetching tasks: %s", e)
         raise HTTPException(status_code=500, detail="Failed to fetch tasks")from e
 
+
 @app.post("/post_tomorrow_task")
-def insert_task_data(request_data: List[Task]):
-    mylog.debug("post_tomorrow_task")
+def insert_task_data(tasks: List[Task]):
+    mylog.debug("🐾🐾")
+
+    tmp_exec_date = epoch_to_datetime(time.time(), 0).strftime("%Y%m%d")# デバグのためtommorow=0にしてる########
+
+    same_date_tasks = session.query(TaskTable).filter(TaskTable.exec_date == tmp_exec_date).all()
+
+    for same_date_task in same_date_tasks:##########
+            mylog.debug(f"same_date_task: {same_date_task.contents}")
 
     tasks_to_insert = []
-    for task_data in request_data:
-        tmp_exec_date = epoch_to_datetime(time.time(), 0).strftime("%Y%m%d")# デバグのためtommorow=0にしてる########
+    for task in tasks:
 
-        # 例えば、session.add(task) とかで、taskをDBに追加できる
-        task = TaskTable(
-            id = task_data.id,
-            exec_date = tmp_exec_date,
-            contents=task_data.contents,
-            priority=task_data.priority,
-            progress=task_data.progress,
-        )
-
-        same_date_tasks = session.query(TaskTable).filter(TaskTable.exec_date == tmp_exec_date).all()
-
-        flag = 0
-        for task in same_date_tasks:
-            if task.contents == task_data.contents:
-                flag = 1
+        task_exists = 0
+        for same_date_task in same_date_tasks:
+            if same_date_task.contents == task.contents:
+                mylog.debug(f"already exists in tomorrow_task: {task.contents}")
+                task_exists = 1
                 break
-        if flag == 0:
-            tasks_to_insert.append(task)
+
+        if task_exists == 0:
+            # 例えば、session.add(task) とかで、taskをDBに追加できる
+            task_to_insert = TaskTable(
+                id = task.id,
+                exec_date = tmp_exec_date,
+                contents=task.contents,
+                priority=task.priority,
+                progress=task.progress,
+            )
+            tasks_to_insert.append(task_to_insert)
+            mylog.debug(f"append to tasks_to_insert: {task_to_insert.contents}, exec_date: {task_to_insert.exec_date}")
 
     try:
         mylog.debug("post_tomorrow_task/try")
@@ -225,6 +266,7 @@ def insert_task_data(request_data: List[Task]):
         session.rollback()
         mylog.error(f"Error inserting tasks: {e}")
         raise HTTPException(status_code=500, detail="Failed to insert tasks") from e
+
 
 @app.post("/post_deleted_task")
 def delete_task_data(request_data: Task):
@@ -246,8 +288,9 @@ def delete_task_data(request_data: Task):
         session.rollback()
         mylog.error(f"Error deleting task: {e}")
         raise HTTPException(status_code=500, detail="Failed to delete task") from e
-    finally:
+    finally: # 要る？
         session.close()
+
 
 @app.post("/post_achievment/{data}")
 def post_achievment(request_data: Task):

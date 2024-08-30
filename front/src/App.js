@@ -3,71 +3,22 @@
 import './App.css';
 import { useEffect, useState } from "react";
 
-
-// import {
-//     Accordion,
-//     AccordionDetails,
-//     AccordionSummary,
-//     Button,
-//     TextField
-//   } from "@mui/material";
 import axios from 'axios';
 import { prefixApi } from "./Connector";
 
 
-
-// function App() {
-//   return (
-//     <div className="App">
-//       <header className="App-header">
-//         <img src={logo} className="App-logo" alt="logo" />
-//         <p>
-//           Edit <code>src/App.js</code> and save to reload.
-//         </p>
-//         <a
-//           className="App-link"
-//           href="https://reactjs.org"
-//           target="_blank"
-//           rel="noopener noreferrer"
-//         >
-//           Learn React
-//         </a>
-//       </header>
-//     </div>
-//   );
-// }
-
-// export default App;
-
-
-
-function GetToday() {
-    let today = new Date();
-    today.setDate(today.getDate());
-    let year = String(today.getFullYear());
-    let month = String("0"+(today.getMonth() + 1)).slice(-2);
-    let date = String("0"+today.getDate()).slice(-2);
-    return year + month + date
+function GetTodayEpoch() {
+    return Date.now();
 }
 
-function GetTommorow() {
-    let today = new Date();
-    let tomorrow = today.setDate(today.getDate() + 1);
-    let year = String(tomorrow.getFullYear());
-    let month = String("0"+(tomorrow.getMonth() + 1)).slice(-2);
-    let date = String("0"+tomorrow.getDate()).slice(-2);
-    return year + month + date
+function GetTommorowEpoch() {
+    return Date.now() + 86400000;
 }
+
 
 export default function App() {
     const today = new Date().toLocaleDateString();
 
-
-    // ul {
-    //     list-style: none;
-    //     justify-content: center;
-    //     column-gap: 10px;
-    // }
     const dummyData = [{
         id: "1724236965191",
         exec_date: "20240811",
@@ -89,47 +40,23 @@ export default function App() {
     }];
 
     const initialItems = [{
-      id: "",
-      exec_date: "",
-      priority: "",
-      contents: "",
-      progress: "",
-      sortId: ""
-    }
-];
+        id: "",
+        exec_date: "",
+        priority: "",
+        contents: "",
+        progress: "",
+        sortId: ""
+        }
+    ];
 
-      
     const [todayItems, setTodayItems] = useState(initialItems);
+
     const [tomorrowItems, setTomorrowItems] = useState(initialItems);
-    // useEffect(() => {///////////条件が合うときに実行
-    //   //今日のタスクを取得
-    //   axios.get(`${prefixApi}/get-today-task`)
-    //     .then(response => {
-    //       if (response.data) {
-    //         setTodayItems(response.data);
-    //       }
-    //     })
-    //     .catch(error => {
-    //       console.error("There was an error fetching the data!", error);
-    //     });
-  
-    //   //明日のタスクを取得
-    //   axios.get(`${prefixApi}get-tomorrow-task`)/////////////prefixApiからget...を取得
-    //     .then(response => {
-    //       if (response.data) {
-    //         setTomorrowItems(response.data);///////////set...にresponse.dataを代入
-    //       }
-    //     })
-    //     .catch(error => {
-    //       console.error("There was an error fetching the data!", error);
-    //     });
-    // }, []);///////////ここが空なら最初に実行？
 
 
     useEffect(() => {
-        let todayDate = GetToday();
-        console.log("todayDate: " + todayDate);
-        axios.get(`${prefixApi}/get_task_data/${todayDate}`)
+        let epoch = GetTodayEpoch();
+        axios.get(`${prefixApi}/get_task_data/${epoch}`)
             .then(response => {
                 console.log("🐾useEffect then1🐾", response);//////////
                 if(response.data){
@@ -184,27 +111,7 @@ export default function App() {
             ))}
         </>
     )///////////
-
-
-    // return (
-    //     <>
-    //         <h1>{today}のタスク</h1>
-    //         <ul style={{ listStyleType: "none", padding: 0 }}>
-    //             {dummyData.map((task, index) => (
-    //                 <li key={index} style={{ display: "inline-block", marginRight: "20px" }}>
-    //                     <span> id: {task.id}</span> | 
-    //                     <span> priority: {task.priority}</span> | 
-    //                     <span> contents: {task.contents}</span> | 
-    //                     <span> progress: {task.progress}</span>
-    //                 </li>
-    //             ))}
-    //         </ul>
-    //     </>
-    // );
 }
-
-
-
 
 
 

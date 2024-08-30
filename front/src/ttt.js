@@ -3,25 +3,6 @@ import { useEffect, useState } from 'react';
 import { prefixApi } from "./Connector";
 
 
-function GetToday() {
-    let today = new Date();
-    today.setDate(today.getDate());
-    let year = String(today.getFullYear());
-    let month = String("0"+(today.getMonth() + 1)).slice(-2);
-    let date = String("0"+today.getDate()).slice(-2);
-    return year + month + date
-}
-
-function GetTommorow() {
-    let today = new Date();
-    let tomorrow = today.setDate(today.getDate() + 1);
-    let year = String(tomorrow.getFullYear());
-    let month = String("0"+(tomorrow.getMonth() + 1)).slice(-2);
-    let date = String("0"+tomorrow.getDate()).slice(-2);
-    return year + month + date
-}
-
-
 export default function Tomorrow({ tomorrowItems }) {
     // ダミーデータ
     tomorrowItems = [{
@@ -49,6 +30,50 @@ export default function Tomorrow({ tomorrowItems }) {
 
     const [tasks, setTasks] = useState(tomorrowItems);//////////とりあえずダミーデータをtasksに入れてる
 
+
+
+
+
+    function GetTodayTasks() {
+        console.log("🐾GetTasks_start🐾");//////////
+        let epoch = Date.now();
+        axios.get(`${prefixApi}/get_task_data/${epoch}`)
+        .then(response => {
+            console.log("🐾GetTasks_then🐾", response.data);//////////
+            if(response.data){
+                setTasks(response.data);
+            }
+        })
+        .catch(error => {
+            console.error("🐾!!!GetTasks_catch🐾", error);
+        });
+    }
+
+    function GetTomorrowTasks() {
+        console.log("🐾GetTomorrowTasks_start🐾");//////////
+        let epoch = Date.now() + 86400000;
+        axios.get(`${prefixApi}/get_task_data/${epoch}`)
+        .then(response => {
+            console.log("🐾GetTasks_then🐾", response.data);//////////
+            if(response.data){
+                setTasks(response.data);
+            }
+        })
+        .catch(error => {
+            console.error("🐾!!!GetTasks_catch🐾", error);
+        });
+    }
+
+    function PostTasks() {
+        console.log("🐾PostTasks_start🐾");//////////
+        axios.post(`${prefixApi}/post_tomorrow_task/`, tasks)
+        .then(response => {
+            console.log("🐾PostTasks_then🐾", response.data);
+        })
+        .catch(error => {
+            console.error("🐾!!!PostTasks_catch🐾", error);
+        });
+    }
 
 
     const OnchangeText = (index, newContents) => {
@@ -99,34 +124,75 @@ export default function Tomorrow({ tomorrowItems }) {
 
     // タスクの更新ボタンで発火。
     const handleUpdateClick = () => {
-        axios.post(`${prefixApi}/post_tomorrow_task/`, tasks)
-        .then(response => {
-            console.log(response)
-            if (response.data) {
-                console.log(response.data);
-            }
+        console.log("🐾handleUpdateClick_start🐾", tasks);
+
+        new Promise((resolve, reject) => {
+            PostTasks();
+            resolve();
         })
-        .catch(error => {
-            console.error("🐾There was an error post_tomorrow_task!", error);
+        .then(() => {
+            GetTodayTasks();
+            return;
         });
+
+        console.log("🐾handleUpdateClick_complete🐾", tasks);//////////
     }
+
+    useEffect(() => {
+        GetTodayTasks();
+        // let epoch = GetTodayEpoch();
+        // axios.get(`${prefixApi}/get_task_data/${epoch}`)
+        // .then(response => {
+        //     console.log("🐾useEffect then1🐾", response);//////////
+        //     if(response.data){
+        //         console.log("🐾useEffect then2🐾", response.data);//////////
+        //         setTasks(response.data);
+        //     }
+        // })
+        // .catch(error => {
+        //     console.error("🐾There was an error fetching the data!", error);
+        // });
+
+        console.log("🐾useEffect_complete🐾", tasks);//////////
+    }, []);
 
     return (
         <div style={{ textAlign: "center"}}>
-            <h2>明日のタスク５</h2>
+            <h2>明日のタスク6</h2>
             <button onClick={ handleAddClick }>タスクの追加</button>
+            
             {/* tasksを回してるからtasksの要素が増えるとたTaskLineの行が増える */}
             {tasks.map((task, index) => (
                  <div>
-                    <button onClick={() => { handleDeleteClick(index) }}>削除</button>
+                    <button 
+                        onClick={() => { handleDeleteClick(index) }}
+                    >
+                        削除
+                    </button>
 
                     {/* タスク名を入力するテキストボックス */}
-                    <input style={{ textAlign: "center" }} value={task.contents} onChange={(e) => { OnchangeText(index, e.target.value) }} />
+                    <input 
+                        style={{ textAlign: "center" }} 
+                        value={task.contents} 
+                        onChange={(e) => { OnchangeText(index, e.target.value) }} 
+                    />
 
                     {/* 優先度を変更するボタンたち */}
-                    <button style={{ textAlign: "center" }} onClick={() => { handlePriorityClick(index, -1) }}>-</button>
+                    <button 
+                        style={{ textAlign: "center" }} 
+                        onClick={() => { handlePriorityClick(index, -1) }}
+                    >
+                        -
+                    </button>
+
                     {task.priority}
-                    <button style={{ textAlign: "center" }} onClick={() => { handlePriorityClick(index, +1) }}>+</button>
+
+                    <button 
+                        style={{ textAlign: "center" }} 
+                        onClick={() => { handlePriorityClick(index, +1) }}
+                    >
+                        +
+                    </button>
                 </div>
             ))}
             <button onClick={ handleUpdateClick }>更新</button>
