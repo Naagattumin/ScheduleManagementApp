@@ -4,9 +4,13 @@ services:
     backend:
         container_name: backend
         depends_on:
-            - db
-        links:
-            - db
+            # 例えば、`- db` と記述することで、dbサービスが起動していることを確認してからbackendサービスが起動するようになります。
+            db:
+                condition: service_healthy
+                # dbサービスが healthy であることを確認してから backend サービスを起動します。
+        # links:
+        #     - db
+        # linksの非推奨: Docker Composeのバージョン3以降では、linksオプションは非推奨とされています。代わりに、サービスは同じネットワーク内に配置されるため、サービス名を直接使用して通信できます。例えば、backendサービスからdbサービスにアクセスする場合、dbというホスト名を直接使用できます。
         build:
             context: ./backend
             dockerfile: Dockerfile
@@ -40,3 +44,15 @@ services:
         volumes:
             - ./mysql/initdb.d:/docker-entrypoint-initdb.d
             - ./mysql/conf.d/my.cnf:/etc/mysql/my.cnf
+        healthcheck:
+            test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -ppassword"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+        # healthcheck:
+            # test: mysqladmin ping -h localhost -u root -ppasswordコマンドを使用して、MySQLデータベースが正常に動作しているかを確認します。このコマンドが成功するとこのサービスは healthy であるとみなされます。
+            # interval: 10秒ごとにチェックを行います。起動中はずっと動く
+            # timeout: 5秒以内に応答がない場合は失敗とみなします。
+            # retries: 5回のリトライを行います。
+        # この設定により、dbサービスが正常に動作していることを確認してからbackendサービスが起動するようになります。

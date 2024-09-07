@@ -16,6 +16,8 @@ function GetTommorowEpoch() {
 }
 
 
+
+
 export default function App() {
     const today = new Date().toLocaleDateString();
 
@@ -53,6 +55,60 @@ export default function App() {
 
     const [tomorrowItems, setTomorrowItems] = useState(initialItems);
 
+    function GetTodayTasks() {
+        let epoch = Date.now();
+        return axios.get(`${prefixApi}/get_task_data/${epoch}`)
+        .then(response => {
+            console.log("🐾GetTasks_then🐾", response.data);//////////
+            if(response.data){
+                return response.data;
+            }
+        })
+        .catch(error => {
+            console.error("🐾!!!GetTasks_catch🐾", error);
+        });
+
+
+        // console.log("🐾GetTasks_start🐾");//////////
+        // let epoch = Date.now();
+        // axios.get(`${prefixApi}/get_task_data/${epoch}`)
+        // .then(response => {
+        //     console.log("🐾GetTasks_then🐾", response.data);//////////
+        //     if(response.data){
+        //         return response.data;
+        //     }
+        // })
+        // .catch(error => {
+        //     console.error("🐾!!!GetTasks_catch🐾", error);
+        // });
+    }
+    
+    function GetTomorrowTasks(setItems) {
+        console.log("🐾GetTomorrowTasks_start🐾");//////////
+        let epoch = Date.now() + 86400000;
+        axios.get(`${prefixApi}/get_task_data/${epoch}`)
+        .then(response => {
+            console.log("🐾GetTasks_then🐾", response.data);//////////
+            if(response.data){
+                setItems(response.data);
+            }
+        })
+        .catch(error => {
+            console.error("🐾!!!GetTasks_catch🐾", error);
+        });
+    }
+    
+    function PostTasks(tasks) {
+        console.log("🐾PostTasks_start🐾");//////////
+        axios.post(`${prefixApi}/post_tomorrow_task/`, tasks)
+        .then(response => {
+            console.log("🐾PostTasks_then🐾", response.data);
+        })
+        .catch(error => {
+            console.error("🐾!!!PostTasks_catch🐾", error);
+        });
+    }
+
 
     useEffect(() => {
         let epoch = GetTodayEpoch();
@@ -85,20 +141,14 @@ export default function App() {
         }
     }
 
-    function OnClickHello() {
-        axios.get(`${prefixApi}/hello`)
-        .then(response => {
-            console.log("🐾OnClickHello.then", response.data.message)
-        })
-        .catch(error => {
-            console.error("There was an error fetching the data!", error);
-        });
+    async function OnClickUpdate() {
+        setTodayItems(await GetTodayTasks());
     }
 
     return (
         <>
             <h1 style={{ textAlign: "center" }}>{today}のタスク1</h1>
-            <button onClick={() => {OnClickHello()}}>Hello</button>
+            <button onClick={() => {OnClickUpdate()}}>更新</button>
             {todayItems.map((task, index) => (
                 <ul style={{ textAlign: "center" }}>
                     <li style={{ display: "inline-block", width: "10%"}}>優先度： {task.priority}  </li>

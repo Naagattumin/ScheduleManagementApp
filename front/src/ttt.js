@@ -26,45 +26,40 @@ export default function Tomorrow({ tomorrowItems }) {
     }];
 
 
-
-
     const [tasks, setTasks] = useState(tomorrowItems);//////////とりあえずダミーデータをtasksに入れてる
 
 
-
-
-
-    function GetTodayTasks() {
+    function GetTodayTasks(setItems) {
         console.log("🐾GetTasks_start🐾");//////////
         let epoch = Date.now();
         axios.get(`${prefixApi}/get_task_data/${epoch}`)
         .then(response => {
             console.log("🐾GetTasks_then🐾", response.data);//////////
             if(response.data){
-                setTasks(response.data);
+                setItems(response.data);
             }
         })
         .catch(error => {
             console.error("🐾!!!GetTasks_catch🐾", error);
         });
     }
-
-    function GetTomorrowTasks() {
+    
+    function GetTomorrowTasks(setItems) {
         console.log("🐾GetTomorrowTasks_start🐾");//////////
         let epoch = Date.now() + 86400000;
         axios.get(`${prefixApi}/get_task_data/${epoch}`)
         .then(response => {
             console.log("🐾GetTasks_then🐾", response.data);//////////
             if(response.data){
-                setTasks(response.data);
+                setItems(response.data);
             }
         })
         .catch(error => {
             console.error("🐾!!!GetTasks_catch🐾", error);
         });
     }
-
-    function PostTasks() {
+    
+    function PostTasks(tasks) {
         console.log("🐾PostTasks_start🐾");//////////
         axios.post(`${prefixApi}/post_tomorrow_task/`, tasks)
         .then(response => {
@@ -127,11 +122,11 @@ export default function Tomorrow({ tomorrowItems }) {
         console.log("🐾handleUpdateClick_start🐾", tasks);
 
         new Promise((resolve, reject) => {
-            PostTasks();
+            PostTasks(tasks);
             resolve();
         })
         .then(() => {
-            GetTodayTasks();
+            GetTodayTasks(setTasks);
             return;
         });
 
@@ -139,7 +134,7 @@ export default function Tomorrow({ tomorrowItems }) {
     }
 
     useEffect(() => {
-        GetTodayTasks();
+        GetTodayTasks(setTasks);
         // let epoch = GetTodayEpoch();
         // axios.get(`${prefixApi}/get_task_data/${epoch}`)
         // .then(response => {
@@ -160,7 +155,7 @@ export default function Tomorrow({ tomorrowItems }) {
         <div style={{ textAlign: "center"}}>
             <h2>明日のタスク6</h2>
             <button onClick={ handleAddClick }>タスクの追加</button>
-            
+
             {/* tasksを回してるからtasksの要素が増えるとたTaskLineの行が増える */}
             {tasks.map((task, index) => (
                  <div>
