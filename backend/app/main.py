@@ -266,23 +266,26 @@ def insert_task_data(tasks: List[Task]):
 
     tmp_exec_date = py_epoch_to_datetime(time.time(), 0).strftime("%Y%m%d")# デバグのためtommorow=0にしてる########
 
+    # 同じ exec_date かつ同じ contents のタスクは追加しない
     same_date_tasks = session.query(TaskTable).filter(TaskTable.exec_date == tmp_exec_date).all()
 
     for same_date_task in same_date_tasks:##########
         mylog.debug(f"same_date_task: {same_date_task.contents}")
 
+    # 同じタスクが有ったときメッセージに出すためのフラグ
+    flag = 0
     tasks_to_insert = []
     for task in tasks:
 
-        task_exists = 0
+        is_task_exists = 0
         for same_date_task in same_date_tasks:
             if same_date_task.contents == task.contents:
                 mylog.debug(f"already exists in tomorrow_task: {task.contents}")
-                task_exists = 1
+                flag = 1
+                is_task_exists = 1
                 break
 
-        if task_exists == 0:
-            # 例えば、session.add(task) とかで、taskをDBに追加できる
+        if is_task_exists == 0:
             task_to_insert = TaskTable(
                 id = task.id,
                 exec_date = tmp_exec_date,
@@ -297,7 +300,10 @@ def insert_task_data(tasks: List[Task]):
         mylog.debug("post_tomorrow_task/try")
         session.add_all(tasks_to_insert)
         session.commit()
-        return {"message": "Tasks inserted successfully"}
+        if flag == 0:
+            return {"message": "Tasks inserted successfully"}
+        else:
+            return {"message": "Some tasks already exists, others inserted successfully"}
     except Exception as e:
         mylog.debug("post_tomorrow_task/except")
         session.rollback()

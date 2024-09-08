@@ -101,9 +101,24 @@ export default function Tomorrow({ tomorrowItems }) {
         // 多分、ただのシャローコーピー
         let newTask = tasks.concat();
 
+        // IDの重複を避けるための処理
+        let epoch = Date.now();
+
+        let flag = true;
+        while (flag) {
+            flag = false;
+            for (let i = 0; i < newTask.length; i++) {
+                if (newTask[i].id === epoch) {
+                    flag = true;
+                    ++epoch;
+                    break;
+                }
+            }
+        }
+
         // null回避のための初期化用タスク
         let addedTask = {
-            id: Date.now(),
+            id: epoch,
             exec_date: "",
             priority: 0,
             contents: "",
