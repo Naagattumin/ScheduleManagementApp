@@ -57,50 +57,35 @@ export default function App() {
 
     function GetTodayTasks() {
         let epoch = Date.now();
+
         return axios.get(`${prefixApi}/get_task_data/${epoch}`)
         .then(response => {
             console.log("🐾GetTasks_then🐾", response.data);//////////
-            if(response.data){
-                return response.data;
-            }
+            return response.data;
         })
         .catch(error => {
             console.error("🐾!!!GetTasks_catch🐾", error);
         });
-
-
-        // console.log("🐾GetTasks_start🐾");//////////
-        // let epoch = Date.now();
-        // axios.get(`${prefixApi}/get_task_data/${epoch}`)
-        // .then(response => {
-        //     console.log("🐾GetTasks_then🐾", response.data);//////////
-        //     if(response.data){
-        //         return response.data;
-        //     }
-        // })
-        // .catch(error => {
-        //     console.error("🐾!!!GetTasks_catch🐾", error);
-        // });
     }
-    
-    function GetTomorrowTasks(setItems) {
+
+    function GetTomorrowTasks() {
         console.log("🐾GetTomorrowTasks_start🐾");//////////
         let epoch = Date.now() + 86400000;
-        axios.get(`${prefixApi}/get_task_data/${epoch}`)
+
+        return axios.get(`${prefixApi}/get_task_data/${epoch}`)
         .then(response => {
             console.log("🐾GetTasks_then🐾", response.data);//////////
-            if(response.data){
-                setItems(response.data);
-            }
+            return response.data;
         })
         .catch(error => {
             console.error("🐾!!!GetTasks_catch🐾", error);
         });
     }
-    
+
     function PostTasks(tasks) {
         console.log("🐾PostTasks_start🐾");//////////
-        axios.post(`${prefixApi}/post_tomorrow_task/`, tasks)
+
+        return axios.post(`${prefixApi}/post_tomorrow_task/`, tasks)
         .then(response => {
             console.log("🐾PostTasks_then🐾", response.data);
         })
@@ -111,19 +96,11 @@ export default function App() {
 
 
     useEffect(() => {
-        let epoch = GetTodayEpoch();
-        axios.get(`${prefixApi}/get_task_data/${epoch}`)
-            .then(response => {
-                console.log("🐾useEffect then1🐾", response);//////////
-                if(response.data){
-                    console.log("🐾useEffect then2🐾", response.data);//////////
-                    setTodayItems(response.data);
-                }
-            })
-            .catch(error => {
-                console.error("🐾There was an error fetching the data!", error);
-            });
+        (async () => {
+            setTodayItems(await GetTodayTasks());
+        })();
     }, []);
+
 
     function OnClickProg(index, num) {
         if (num == -1){

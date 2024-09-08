@@ -29,39 +29,37 @@ export default function Tomorrow({ tomorrowItems }) {
     const [tasks, setTasks] = useState(tomorrowItems);//////////とりあえずダミーデータをtasksに入れてる
 
 
-    function GetTodayTasks(setItems) {
-        console.log("🐾GetTasks_start🐾");//////////
-        let epoch = Date.now();
-        axios.get(`${prefixApi}/get_task_data/${epoch}`)
+    function GetTodayTasks() {
+        let jsEpoch = Date.now();
+
+        return axios.get(`${prefixApi}/get_task_data/${jsEpoch}`)
         .then(response => {
             console.log("🐾GetTasks_then🐾", response.data);//////////
-            if(response.data){
-                setItems(response.data);
-            }
+            return response.data;
         })
         .catch(error => {
             console.error("🐾!!!GetTasks_catch🐾", error);
         });
     }
-    
-    function GetTomorrowTasks(setItems) {
+
+    function GetTomorrowTasks() {
         console.log("🐾GetTomorrowTasks_start🐾");//////////
-        let epoch = Date.now() + 86400000;
-        axios.get(`${prefixApi}/get_task_data/${epoch}`)
+        let jsEpoch = Date.now() + 86400000;
+
+        return axios.get(`${prefixApi}/get_task_data/${jsEpoch}`)
         .then(response => {
             console.log("🐾GetTasks_then🐾", response.data);//////////
-            if(response.data){
-                setItems(response.data);
-            }
+            return response.data;
         })
         .catch(error => {
             console.error("🐾!!!GetTasks_catch🐾", error);
         });
     }
-    
+
     function PostTasks(tasks) {
         console.log("🐾PostTasks_start🐾");//////////
-        axios.post(`${prefixApi}/post_tomorrow_task/`, tasks)
+
+        return axios.post(`${prefixApi}/post_tomorrow_task/`, tasks)
         .then(response => {
             console.log("🐾PostTasks_then🐾", response.data);
         })
@@ -72,7 +70,6 @@ export default function Tomorrow({ tomorrowItems }) {
 
 
     const OnchangeText = (index, newContents) => {
-        console.log("🐾OnchangeText", index);///////
         let newTmpTasks = tasks.concat();
         newTmpTasks[index].contents = newContents;
         setTasks(newTmpTasks);
@@ -118,23 +115,34 @@ export default function Tomorrow({ tomorrowItems }) {
     }
 
     // タスクの更新ボタンで発火。
-    const handleUpdateClick = () => {
+    async function handleUpdateClick () {
         console.log("🐾handleUpdateClick_start🐾", tasks);
 
-        new Promise((resolve, reject) => {
-            PostTasks(tasks);
-            resolve();
+        PostTasks(tasks).then(() => {
+            (async () => {
+                //const tmp = await GetTomorrowTasks();//////////デバグのために GetTodayTasks にしてる
+                const tmp = await GetTodayTasks();
+                console.log("🐾handleUpdateClick_then🐾", tmp);//////////
+                setTasks(tmp);
+            })();
         })
-        .then(() => {
-            GetTodayTasks(setTasks);
-            return;
-        });
+
+        // new Promise((resolve, reject) => {
+        //     PostTasks(tasks);
+        //     resolve();
+        // })
+        // .then(() => {
+        //     setTasks(await GetTodayTasks());
+        //     return;
+        // });
 
         console.log("🐾handleUpdateClick_complete🐾", tasks);//////////
     }
 
     useEffect(() => {
-        GetTodayTasks(setTasks);
+        (async () => {
+            setTasks(await GetTodayTasks());
+        })();
         // let epoch = GetTodayEpoch();
         // axios.get(`${prefixApi}/get_task_data/${epoch}`)
         // .then(response => {

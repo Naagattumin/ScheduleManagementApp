@@ -6,7 +6,7 @@ import logging
 mylog = logging.getLogger("mylog")
 mylog.setLevel(logging.DEBUG)
 handler = logging.StreamHandler()
-handler.setFormatter(logging.Formatter("🐕️%(asctime)s [🐾%(levelname)s🐾] %(pathname)s %(lineno)d %(funcName)s\n🐈️ %(message)s🐋", datefmt="%y%m%d_%H%M%S"))
+handler.setFormatter(logging.Formatter("🐕️%(asctime)s [🐾%(levelname)s🐾] %(pathname)s %(lineno)d %(funcName)s\n🐋%(message)s🐈️", datefmt="%y%m%d_%H%M%S"))
 mylog.addHandler(handler)
 
 import time, datetime
@@ -194,25 +194,45 @@ class Task(BaseModel):
 
 
 
-def epoch_to_datetime(epoch, tomorrow=0):
+def py_epoch_to_datetime(py_epoch, tomorrow=0):
     """午前4時に日付が変わるようにずれた日時を返す。返り値は日付のみを使うこと。
 
     Args:
-        epoch (int, str): エポック秒またはエポックミリ秒。
+        py_epoch (int, str): エポック秒。
         tomorrow (int, optional): tomorrow=1 なら翌日の日付を返す. Defaults to 0.
 
     return:
         datetime.datetime: 日付のみを使うこと
     """
     assert tomorrow in (0, 1)
-    epoch = int(epoch)
-    if epoch > 1e10:
-        epoch = epoch / 1000
+    py_epoch = int(py_epoch)
+    # 4 * 60 * 60 は4時間の秒数。午前4時に日付が変わるようにずらす。
+    py_epoch = py_epoch - 4 * 60 * 60 + tomorrow * 24 * 60 * 60
     try:
-        # エポックタイムが非常に大きい場合はミリ秒とみなす
-        return datetime.datetime.fromtimestamp(epoch - 4 * 60 * 60 + tomorrow * 24 * 60 * 60)
+        return datetime.datetime.fromtimestamp(py_epoch)
     except (ValueError, OSError) as e:
-        raise ValueError(f"Invalid epoch format: {epoch}") from e
+        raise ValueError(f"Invalid py_epoch format: {py_epoch}") from e
+
+
+
+def js_epoch_to_datetime(js_epoch, tomorrow=0):
+    """午前4時に日付が変わるようにずれた日時を返す。返り値は日付のみを使うこと。
+
+    Args:
+        js_epoch (int, str): エポックミリ秒。
+        tomorrow (int, optional): tomorrow=1 なら翌日の日付を返す. Defaults to 0.
+
+    return:
+        datetime.datetime: 日付のみを使うこと
+    """
+    assert tomorrow in (0, 1)
+    py_epoch = int(js_epoch) / 1000
+    # 4 * 60 * 60 は4時間の秒数。午前4時に日付が変わるようにずらす。
+    py_epoch = py_epoch - 4 * 60 * 60 + tomorrow * 24 * 60 * 60
+    try:
+        return datetime.datetime.fromtimestamp(py_epoch)
+    except (ValueError, OSError) as e:
+        raise ValueError(f"Invalid py_epoch format: {py_epoch}") from e
 
 
 
@@ -221,15 +241,14 @@ def hello():
     mylog.debug("hello")
     return {"message": "Hellow Wordld"}
 
-@app.get
 
-
-@app.get("/get_task_data/{epoch}")
-def get_task_data(epoch: str):
+@app.get("/get_task_data/{js_epoch}")
+def get_task_data(js_epoch: str):
+    mylog.debug("start: get_task_data")
     try:
         # id.like(文字列)で、その文字列を含むidを持つデータをフィルタリングする
         # all()で、フィルタリングされた全てのデータをリストとして取得する
-        date = epoch_to_datetime(epoch).strftime("%Y%m%d")
+        date = js_epoch_to_datetime(js_epoch).strftime("%Y%m%d")
         tasks = session.query(TaskTable).filter(TaskTable.exec_date.like(f'%{date}%')).all()
         mylog.info(f"Fetching tasks for date: {date}")
         for task in tasks:########
@@ -245,7 +264,7 @@ from typing import List
 def insert_task_data(tasks: List[Task]):
     mylog.debug("🐾🐾")
 
-    tmp_exec_date = epoch_to_datetime(time.time(), 0).strftime("%Y%m%d")# デバグのためtommorow=0にしてる########
+    tmp_exec_date = py_epoch_to_datetime(time.time(), 0).strftime("%Y%m%d")# デバグのためtommorow=0にしてる########
 
     same_date_tasks = session.query(TaskTable).filter(TaskTable.exec_date == tmp_exec_date).all()
 
