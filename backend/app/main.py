@@ -237,12 +237,6 @@ def js_epoch_to_datetime(js_epoch, tomorrow=0):
 
 
 
-@app.get("/hello")
-def hello():
-    mylog.debug("hello")
-    return {"message": "Hellow Wordld"}
-
-
 @app.get("/get_task_data/{js_epoch}")
 def get_task_data(js_epoch: str):
     mylog.debug("get_task_data/start")
@@ -382,3 +376,6 @@ def post_achievement(request_data: Task):
 
 # @app.post("/post_tomorrow_task")
 # def insert_task_data(tasks: List[Task]):
+
+
+

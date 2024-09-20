@@ -132,6 +132,7 @@ export default function App() {
         setTodayItems(await GetTodayTasks());
     }
 
+
     return (
         <>
             <h1 style={{ textAlign: "center" }}>{today}のタスク1</h1>
