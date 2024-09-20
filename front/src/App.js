@@ -7,17 +7,6 @@ import axios from 'axios';
 import { prefixApi } from "./Connector";
 
 
-function GetTodayEpoch() {
-    return Date.now();
-}
-
-function GetTommorowEpoch() {
-    return Date.now() + 86400000;
-}
-
-
-
-
 export default function App() {
     const today = new Date().toLocaleDateString();
 
@@ -95,6 +84,19 @@ export default function App() {
     }
 
 
+    function PostAchievement(tasks) {
+        console.log("🐾PostAchievement_start🐾");//////////
+
+        return axios.post(`${prefixApi}/post_achievement/`, tasks)
+        .then(response => {
+            console.log("🐾PostAchievement_then🐾", response.data);
+        })
+        .catch(error => {
+            console.error("🐾!!!PostAchievement_catch🐾", error);
+        });
+    }
+
+
     useEffect(() => {
         (async () => {
             setTodayItems(await GetTodayTasks());
@@ -116,6 +118,14 @@ export default function App() {
                 setTodayItems(nextTodayItems);
             }
         }
+
+        PostAchievement(todayItems[index]).then(() => {
+            (async () => {
+                const tmp = await GetTodayTasks();
+                console.log("🐾handleUpdateClick_then🐾", tmp);//////////
+                setTodayItems(tmp);
+            })();
+        })
     }
 
     async function OnClickUpdate() {

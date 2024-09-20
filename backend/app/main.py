@@ -6,7 +6,7 @@ import logging
 mylog = logging.getLogger("mylog")
 mylog.setLevel(logging.DEBUG)
 handler = logging.StreamHandler()
-handler.setFormatter(logging.Formatter("🐕️%(asctime)s [🐾%(levelname)s🐾] %(pathname)s %(lineno)d %(funcName)s\n🐋%(message)s🐈️", datefmt="%y%m%d_%H%M%S"))
+handler.setFormatter(logging.Formatter("🐕️%(asctime)s [🐾%(levelname)s🐾] %(pathname)s %(lineno)d %(funcName)s🐉\n🐳%(message)s🐈️", datefmt="%y%m%d_%H%M%S"))
 mylog.addHandler(handler)
 
 import time, datetime
@@ -111,11 +111,12 @@ Base = declarative_base()
 Base.query = session.query_property()
 
 # TaskTableは、Baseを継承して定義されたモデルクラスです。このクラスは、データベースのtaskテーブルとマッピングされ、各カラムを属性として持ちます。
+# 後で Base.metadata.create_all(ENGINE) でテーブルを作成する（インスタンス化する）。
 class TaskTable(Base):
-    """session.add(task) とかでDBに追加するとき、このクラスを引数にする。後で Base.metadata.create_all(ENGINE) でテーブルを作成する。
+    """session.add(task) とかでDBに追加するとき、このクラスを引数にする。
 
     Args:
-        Base (？): Base = declarative_base() で作ったやつ
+        Base (class): Base = declarative_base() で作ったやつ
 
     Returns:
         task1 = TaskTable(id='1', exec_date = "2024-01-01", contents='Task 1', priority=1, progress=1) や session.add(task) みたいな感じで使う
@@ -244,7 +245,7 @@ def hello():
 
 @app.get("/get_task_data/{js_epoch}")
 def get_task_data(js_epoch: str):
-    mylog.debug("start: get_task_data")
+    mylog.debug("get_task_data/start")
     try:
         # id.like(文字列)で、その文字列を含むidを持つデータをフィルタリングする
         # all()で、フィルタリングされた全てのデータをリストとして取得する
@@ -260,9 +261,10 @@ def get_task_data(js_epoch: str):
 
 from typing import List
 
+########デバグのため post_today_task みたくなってる
 @app.post("/post_tomorrow_task")
 def insert_task_data(tasks: List[Task]):
-    mylog.debug("🐾🐾")
+    mylog.debug("insert_task_data/start")
 
     tmp_exec_date = py_epoch_to_datetime(time.time(), 0).strftime("%Y%m%d")# デバグのためtommorow=0にしてる########
 
@@ -335,15 +337,18 @@ def delete_task_data(request_data: Task):
         session.close()
 
 
-@app.post("/post_achievment/{data}")
-def post_achievment(request_data: Task):
+@app.post("/post_achievement")
+def post_achievement(request_data: Task):
+    mylog.debug("post_achievement/start")
+    print(request_data)##############
+
     try:
         # タスクが存在するかを確認
         task = session.query(TaskTable).filter(TaskTable.id == request_data.id).first()
 
         if not task:
             mylog.warning(f"No task found with id: {request_data.id}")
-            raise HTTPException(status_code=404, detail="Task not found")
+            raise HTTPException(status_code=404, detail=f"Task not found with id: {request_data.id}")
 
         task.progress = request_data.progress
         session.commit()
@@ -352,3 +357,28 @@ def post_achievment(request_data: Task):
         session.rollback()
         mylog.error(f"Error updating task: {e}")
         raise HTTPException(status_code=500, detail="Failed to update task") from e
+    
+
+# @app.post("/post_achievement/{data}")
+# def post_achievement(request_data: Task):
+#     mylog.debug("post_achievement/start")
+
+#     try:
+#         # タスクが存在するかを確認
+#         task = session.query(TaskTable).filter(TaskTable.id == request_data.id).first()
+
+#         if not task:
+#             mylog.warning(f"No task found with id: {request_data.id}")
+#             raise HTTPException(status_code=404, detail="Task not found")
+
+#         task.progress = request_data.progress
+#         session.commit()
+#         return {"message": "Task updated successfully"}
+#     except Exception as e:
+#         session.rollback()
+#         mylog.error(f"Error updating task: {e}")
+#         raise HTTPException(status_code=500, detail="Failed to update task") from e
+
+
+# @app.post("/post_tomorrow_task")
+# def insert_task_data(tasks: List[Task]):

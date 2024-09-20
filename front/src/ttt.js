@@ -94,7 +94,7 @@ export default function Tomorrow({ tomorrowItems }) {
         nextTasks.splice(index, 1);
         setTasks(nextTasks);
     }
- 
+
 
     // タスクの追加ボタンで発火。
     const handleAddClick = () => {
@@ -130,6 +130,7 @@ export default function Tomorrow({ tomorrowItems }) {
     }
 
     // タスクの更新ボタンで発火。
+    ////////////デバグのため今日のタスクを取得している
     async function handleUpdateClick () {
         console.log("🐾handleUpdateClick_start🐾", tasks);
 
