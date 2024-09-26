@@ -26,20 +26,47 @@ export default function Tomorrow({ tomorrowItems }) {
     }];
 
 
-    const [tasks, setTasks] = useState(tomorrowItems);//////////とりあえずダミーデータをtasksに入れてる
+    const [tasks, setTasks] = useState();
+
+    const [text, setText] = useState("");
+
+    const [loading, setLoading] = useState(true);
+    let isLoading = true;
+    function PostAndGetTasks(tasks, setTasks) {
+        axios.post(`${prefixApi}/post_tomorrow_task/`, tasks)
+            .then(response => {
+                console.log("🐾PostTasks_then🐾", response.data);
+            })
+            .catch(error => {
+                console.error("🐾!!!PostTasks_catch🐾", error);
+            })
+            .then(() => {
+                axios.get(`${prefixApi}/get_task_data/${Date.now()}`)
+                    .then(response => {
+                        console.log("🐾GetTasks_then🐾", response.data);//////////
+                        setLoading(true);
+                        setTasks(response.data);
+                    })
+                    .catch(error => {
+                        console.error("🐾!!!GetTasks_catch🐾", error);
+                    });
+            });
+    }
+
+
 
 
     function GetTodayTasks() {
         let jsEpoch = Date.now();
 
         return axios.get(`${prefixApi}/get_task_data/${jsEpoch}`)
-        .then(response => {
-            console.log("🐾GetTasks_then🐾", response.data);//////////
-            return response.data;
-        })
-        .catch(error => {
-            console.error("🐾!!!GetTasks_catch🐾", error);
-        });
+            .then(response => {
+                console.log("🐾GetTasks_then🐾", response.data);//////////
+                return response.data;
+            })
+            .catch(error => {
+                console.error("🐾!!!GetTasks_catch🐾", error);
+            });
     }
 
     function GetTomorrowTasks() {
@@ -47,32 +74,64 @@ export default function Tomorrow({ tomorrowItems }) {
         let jsEpoch = Date.now() + 86400000;
 
         return axios.get(`${prefixApi}/get_task_data/${jsEpoch}`)
-        .then(response => {
-            console.log("🐾GetTasks_then🐾", response.data);//////////
-            return response.data;
-        })
-        .catch(error => {
-            console.error("🐾!!!GetTasks_catch🐾", error);
-        });
+            .then(response => {
+                console.log("🐾GetTasks_then🐾", response.data);//////////
+                return response.data;
+            })
+            .catch(error => {
+                console.error("🐾!!!GetTasks_catch🐾", error);
+            });
     }
 
     function PostTasks(tasks) {
         console.log("🐾PostTasks_start🐾");//////////
 
         return axios.post(`${prefixApi}/post_tomorrow_task/`, tasks)
-        .then(response => {
-            console.log("🐾PostTasks_then🐾", response.data);
-        })
-        .catch(error => {
-            console.error("🐾!!!PostTasks_catch🐾", error);
-        });
+            .then(response => {
+                console.log("🐾PostTasks_then🐾", response.data);
+            })
+            .catch(error => {
+                console.error("🐾!!!PostTasks_catch🐾", error);
+            });
+    }
+
+    function Delete_Task(task) {
+        console.log("🐾DeleteTasks_start🐾");//////////////
+
+        return axios.post(`${prefixApi}/post_deleted_task`, task)
+            .then(response => {
+                console.log("🐾DeleteTasks_then🐾", response.data);
+            })
+            .catch(error => {
+                console.error("🐾!!!DeleteTasks_catch🐾", error);
+            });
     }
 
 
     const OnchangeText = (index, newContents) => {
-        let newTmpTasks = tasks.concat();
-        newTmpTasks[index].contents = newContents;
-        setTasks(newTmpTasks);
+        let newTasks = tasks.concat();
+        newTasks[index].contents = newContents;
+        isLoading = true;
+        setTasks(newTasks);
+
+
+        // let newTasks = tasks.concat();
+        // newTasks[index].contents = newContents;
+        // setText(newTasks);
+
+
+        // let newTmpTtext = text;
+        // newTmpTtext = newContents;
+        // setText(newTmpTtext);
+    }
+
+    function OnBlurText(index, newText) {
+        PostTasks(tasks).then(() => {
+            GetTodayTasks().then((response) => {
+                isLoading = true;
+                setTasks(response);
+            })
+        })
     }
 
 
@@ -85,20 +144,33 @@ export default function Tomorrow({ tomorrowItems }) {
         if (newTasks[index].priority + addPriority < 0) {
             return;
         }
+
         newTasks[index].priority += addPriority;
-        setTasks(newTasks);
+        // setTasks(newTasks);
+        PostAndGetTasks(newTasks, setTasks);
+
     }
 
     function handleDeleteClick(index) {
-        let nextTasks = tasks.concat();
-        nextTasks.splice(index, 1);
-        setTasks(nextTasks);
+
+        Delete_Task(tasks[index]).then(() => {
+            GetTodayTasks().then((response) => {
+                isLoading = true;
+                setTasks(response);
+            })
+        })
+
+
+
+        // setTasks(nextTasks);
+        
+
+        // Delete_Task(tasks[index]);
     }
 
 
     // タスクの追加ボタンで発火。
     const handleAddClick = () => {
-        // 多分、ただのシャローコーピー
         let newTask = tasks.concat();
 
         // IDの重複を避けるための処理
@@ -131,17 +203,26 @@ export default function Tomorrow({ tomorrowItems }) {
 
     // タスクの更新ボタンで発火。
     ////////////デバグのため今日のタスクを取得している
-    async function handleUpdateClick () {
+    async function handleUpdateClick() {
         console.log("🐾handleUpdateClick_start🐾", tasks);
 
         PostTasks(tasks).then(() => {
-            (async () => {
-                //const tmp = await GetTomorrowTasks();//////////デバグのために GetTodayTasks にしてる
-                const tmp = await GetTodayTasks();
-                console.log("🐾handleUpdateClick_then🐾", tmp);//////////
-                setTasks(tmp);
-            })();
+            GetTodayTasks().then((response) => {
+                isLoading = true;
+                setTasks(response);
+            })
         })
+
+        // PostAndGetTasks(tasks, setTasks);
+
+        // PostTasks(tasks).then(() => {
+        //     (async () => {
+        //         //const tmp = await GetTomorrowTasks();//////////デバグのために GetTodayTasks にしてる
+        //         const tmp = await GetTodayTasks();
+        //         console.log("🐾handleUpdateClick_then🐾", tmp);//////////
+        //         setTasks(tmp);
+        //     })();
+        // })
 
         // new Promise((resolve, reject) => {
         //     PostTasks(tasks);
@@ -155,50 +236,74 @@ export default function Tomorrow({ tomorrowItems }) {
         console.log("🐾handleUpdateClick_complete🐾", tasks);//////////
     }
 
+
     useEffect(() => {
         (async () => {
+            isLoading = true;
             setTasks(await GetTodayTasks());
         })();
-        // let epoch = GetTodayEpoch();
-        // axios.get(`${prefixApi}/get_task_data/${epoch}`)
-        // .then(response => {
-        //     console.log("🐾useEffect then1🐾", response);//////////
-        //     if(response.data){
-        //         console.log("🐾useEffect then2🐾", response.data);//////////
-        //         setTasks(response.data);
-        //     }
-        // })
-        // .catch(error => {
-        //     console.error("🐾There was an error fetching the data!", error);
-        // });
-
-        console.log("🐾useEffect_complete🐾", tasks);//////////
     }, []);
 
+
+    useEffect(() => {
+        console.log("🐾useEffect[tasks]🐾", tasks);//////////
+        if (tasks === undefined) {
+            console.log("🐾tasks is undefined🐾");//////////
+            return;
+        }
+        // setLoading(true);
+        // PostTasks(tasks).then(() => {
+        //     setLoading(false);
+        // });
+        setLoading(false);
+        isLoading = false;
+    }, [tasks]);
+
+    if (loading) {
+        console.log("🐾Loading🐾");//////////////////
+        return <h1>Loading...</h1>;
+    }
+
+
+
+    function handleDbgClick() {
+        axios.get(`${prefixApi}/get_dbg_task_data/`)
+            .then(response => {
+                console.log("🐾get_dbg_task_data_then🐾", response.data);//////////
+            })
+            .catch(error => {
+                console.error("🐾!!!get_dbg_task_data_catch🐾", error);
+            });
+        console.log("🐾tasks🐾", tasks);
+    }
+
+
     return (
-        <div style={{ textAlign: "center"}}>
+        <div style={{ textAlign: "center" }}>
             <h2>明日のタスク6</h2>
-            <button onClick={ handleAddClick }>タスクの追加</button>
+            <button onClick={handleDbgClick}>dbg</button>
+            <button onClick={handleAddClick}>タスクの追加</button>
 
             {/* tasksを回してるからtasksの要素が増えるとたTaskLineの行が増える */}
             {tasks.map((task, index) => (
-                 <div>
-                    <button 
+                <div>
+                    <button
                         onClick={() => { handleDeleteClick(index) }}
                     >
                         削除
                     </button>
 
                     {/* タスク名を入力するテキストボックス */}
-                    <input 
-                        style={{ textAlign: "center" }} 
-                        value={task.contents} 
-                        onChange={(e) => { OnchangeText(index, e.target.value) }} 
+                    <input
+                        style={{ textAlign: "center" }}
+                        value={task.contents}
+                        onChange={(e) => { OnchangeText(index, e.target.value) }}
+                        onBlur={(e) => { OnBlurText(index, e.target.value) }}
                     />
 
                     {/* 優先度を変更するボタンたち */}
-                    <button 
-                        style={{ textAlign: "center" }} 
+                    <button
+                        style={{ textAlign: "center" }}
                         onClick={() => { handlePriorityClick(index, -1) }}
                     >
                         -
@@ -206,15 +311,17 @@ export default function Tomorrow({ tomorrowItems }) {
 
                     {task.priority}
 
-                    <button 
-                        style={{ textAlign: "center" }} 
+                    <button
+                        style={{ textAlign: "center" }}
                         onClick={() => { handlePriorityClick(index, +1) }}
                     >
                         +
                     </button>
+
+                    id: {task.id}, exec_date: {task.exec_date}, priority: {task.priority}, progress: {task.progress}
                 </div>
             ))}
-            <button onClick={ handleUpdateClick }>更新</button>
+            <button onClick={handleUpdateClick}>更新</button>
         </div>
     );////////////////
 }

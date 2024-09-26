@@ -113,7 +113,7 @@ Base.query = session.query_property()
 # TaskTableは、Baseを継承して定義されたモデルクラスです。このクラスは、データベースのtaskテーブルとマッピングされ、各カラムを属性として持ちます。
 # 後で Base.metadata.create_all(ENGINE) でテーブルを作成する（インスタンス化する）。
 class TaskTable(Base):
-    """session.add(task) とかでDBに追加するとき、このクラスを引数にする。
+    """session.add(task) とかでDBに追加するとき、このクラスのインスタンスを引数にする。
 
     Args:
         Base (class): Base = declarative_base() で作ったやつ
@@ -253,6 +253,8 @@ def get_task_data(js_epoch: str):
         mylog.error("Error fetching tasks: %s", e)
         raise HTTPException(status_code=500, detail="Failed to fetch tasks")from e
 
+
+
 from typing import List
 
 ########デバグのため post_today_task みたくなってる
@@ -262,49 +264,115 @@ def insert_task_data(tasks: List[Task]):
 
     tmp_exec_date = py_epoch_to_datetime(time.time(), 0).strftime("%Y%m%d")# デバグのためtommorow=0にしてる########
 
-    # 同じ exec_date かつ同じ contents のタスクは追加しない
-    same_date_tasks = session.query(TaskTable).filter(TaskTable.exec_date == tmp_exec_date).all()
-
-    for same_date_task in same_date_tasks:##########
-        mylog.debug(f"same_date_task: {same_date_task.contents}")
-
-    # 同じタスクが有ったときメッセージに出すためのフラグ
-    flag = 0
-    tasks_to_insert = []
-    for task in tasks:
-
-        is_task_exists = 0
-        for same_date_task in same_date_tasks:
-            if same_date_task.contents == task.contents:
-                mylog.debug(f"already exists in tomorrow_task: {task.contents}")
-                flag = 1
-                is_task_exists = 1
-                break
-
-        if is_task_exists == 0:
-            task_to_insert = TaskTable(
-                id = task.id,
-                exec_date = tmp_exec_date,
-                contents=task.contents,
-                priority=task.priority,
-                progress=task.progress,
-            )
-            tasks_to_insert.append(task_to_insert)
-            mylog.debug(f"append to tasks_to_insert: {task_to_insert.contents}, exec_date: {task_to_insert.exec_date}")
 
     try:
         mylog.debug("post_tomorrow_task/try")
+
+
+
+        # 同じ id のタスクは追加しない
+        same_date_tasks = session.query(TaskTable).filter(TaskTable.exec_date == tmp_exec_date).all()
+
+        # 同じタスクが有ったときメッセージに出すためのフラグ
+        flag = 0
+        tasks_to_insert = []
+        mylog.debug(f"tasks: {tasks}")
+        mylog.debug(f"same_date_tasks: {same_date_tasks}")
+
+        for task in tasks:
+            is_task_exists = 0
+            for same_date_task in same_date_tasks:
+                if int(same_date_task.id) == task.id:
+                    mylog.debug(f"already exists in tomorrow_task id: {task.id}")
+                    flag = 1
+                    is_task_exists = 1
+                    task_to_change = session.query(TaskTable).filter(TaskTable.id == task.id).first()
+                    task_to_change.exec_date = task.exec_date
+                    task_to_change.contents = task.contents
+                    task_to_change.priority = task.priority
+                    task_to_change.progress = task.progress
+
+                    session.commit()
+                    break
+
+            if is_task_exists == 0:
+                task_to_insert = TaskTable(
+                    id = task.id,
+                    exec_date = tmp_exec_date,
+                    contents=task.contents,
+                    priority=task.priority,
+                    progress=task.progress,
+                )
+                tasks_to_insert.append(task_to_insert)
+
+                mylog.debug(f"append to tasks_to_insert  id:{task_to_insert.id}, contents: {task_to_insert.contents}, exec_date: {task_to_insert.exec_date}")
+
+
+
         session.add_all(tasks_to_insert)
         session.commit()
         if flag == 0:
             return {"message": "Tasks inserted successfully"}
         else:
-            return {"message": "Some tasks already exists, others inserted successfully"}
+            return {"message": "Some id tasks already exists, others inserted successfully"}
     except Exception as e:
         mylog.debug("post_tomorrow_task/except")
         session.rollback()
         mylog.error(f"Error inserting tasks: {e}")
         raise HTTPException(status_code=500, detail="Failed to insert tasks") from e
+
+
+
+# from typing import List
+
+# ########デバグのため post_today_task みたくなってる
+# @app.post("/post_tomorrow_task")
+# def insert_task_data(tasks: List[Task]):
+#     mylog.debug("insert_task_data/start")
+
+#     tmp_exec_date = py_epoch_to_datetime(time.time(), 0).strftime("%Y%m%d")# デバグのためtommorow=0にしてる########
+
+#     # 同じ id のタスクは追加しない
+#     same_date_tasks = session.query(TaskTable).filter(TaskTable.exec_date == tmp_exec_date).all()
+
+#     # 同じタスクが有ったときメッセージに出すためのフラグ
+#     flag = 0
+#     tasks_to_insert = []
+#     mylog.debug(f"tasks: {tasks}")
+#     mylog.debug(f"same_date_tasks: {same_date_tasks}")
+#     for task in tasks:
+#         is_task_exists = 0
+#         for same_date_task in same_date_tasks:
+#             if int(same_date_task.id) == task.id:
+#                 mylog.debug(f"already exists in tomorrow_task id: {task.id}")
+#                 flag = 1
+#                 is_task_exists = 1
+#                 break
+
+#         if is_task_exists == 0:
+#             task_to_insert = TaskTable(
+#                 id = task.id,
+#                 exec_date = tmp_exec_date,
+#                 contents=task.contents,
+#                 priority=task.priority,
+#                 progress=task.progress,
+#             )
+#             tasks_to_insert.append(task_to_insert)
+#             mylog.debug(f"append to tasks_to_insert: {task_to_insert.contents}, exec_date: {task_to_insert.exec_date}")
+
+#     try:
+#         mylog.debug("post_tomorrow_task/try")
+#         session.add_all(tasks_to_insert)
+#         session.commit()
+#         if flag == 0:
+#             return {"message": "Tasks inserted successfully"}
+#         else:
+#             return {"message": "Some id tasks already exists, others inserted successfully"}
+#     except Exception as e:
+#         mylog.debug("post_tomorrow_task/except")
+#         session.rollback()
+#         mylog.error(f"Error inserting tasks: {e}")
+#         raise HTTPException(status_code=500, detail="Failed to insert tasks") from e
 
 
 @app.post("/post_deleted_task")
@@ -378,4 +446,18 @@ def post_achievement(request_data: Task):
 # def insert_task_data(tasks: List[Task]):
 
 
+
+@app.get("/get_dbg_task_data")##################
+def get_dbg_task_data():
+    mylog.debug("get_dbg_task_data/start")
+    try:
+        tasks = session.query(TaskTable).all()
+        mylog.info(f"Fetching tasks for date: {tasks}")
+        for task in tasks:
+            print(task.__dict__)
+        return tasks
+    except Exception as e:
+        mylog.error("Error fetching tasks: %s", e)
+        raise HTTPException(status_code=500, detail="Failed to fetch tasks")from e
+    
 
