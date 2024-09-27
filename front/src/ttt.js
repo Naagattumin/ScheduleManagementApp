@@ -32,29 +32,6 @@ export default function Tomorrow({ tomorrowItems }) {
 
     const [loading, setLoading] = useState(true);
     let isLoading = true;
-    function PostAndGetTasks(tasks, setTasks) {
-        axios.post(`${prefixApi}/post_tomorrow_task/`, tasks)
-            .then(response => {
-                console.log("🐾PostTasks_then🐾", response.data);
-            })
-            .catch(error => {
-                console.error("🐾!!!PostTasks_catch🐾", error);
-            })
-            .then(() => {
-                axios.get(`${prefixApi}/get_task_data/${Date.now()}`)
-                    .then(response => {
-                        console.log("🐾GetTasks_then🐾", response.data);//////////
-                        setLoading(true);
-                        setTasks(response.data);
-                    })
-                    .catch(error => {
-                        console.error("🐾!!!GetTasks_catch🐾", error);
-                    });
-            });
-    }
-
-
-
 
     function GetTodayTasks() {
         let jsEpoch = Date.now();
@@ -107,6 +84,42 @@ export default function Tomorrow({ tomorrowItems }) {
             });
     }
 
+    function PostProgress(task) {
+        console.log("🐾PostProgress_start🐾");//////////
+
+        return axios.post(`${prefixApi}/post_achievement/`, task)
+            .then(response => {
+                console.log("🐾PostProgress_then🐾", response.data);
+            })
+            .catch(error => {
+                console.error("🐾!!!PostProgress_catch🐾", error);
+            });
+    }
+
+    function PostPriority(task) {
+        console.log("🐾PostPriority_start🐾");//////////
+
+        return axios.post(`${prefixApi}/post_priority/`, task)
+            .then(response => {
+                console.log("🐾PostPriority_then🐾", response.data);
+            })
+            .catch(error => {
+                console.error("🐾!!!PostPriority_catch🐾", error);
+            });
+    }
+
+    function PostContents(task) {
+        console.log("🐾PostContents_start🐾");//////////
+
+        return axios.post(`${prefixApi}/post_contents/`, task)
+            .then(response => {
+                console.log("🐾PostContents_then🐾", response.data);
+            })
+            .catch(error => {
+                console.error("🐾!!!PostContents_catch🐾", error);
+            });
+    }
+
 
     const OnchangeText = (index, newContents) => {
         let newTasks = tasks.concat();
@@ -126,7 +139,7 @@ export default function Tomorrow({ tomorrowItems }) {
     }
 
     function OnBlurText(index, newText) {
-        PostTasks(tasks).then(() => {
+        PostContents(tasks[index]).then(() => {
             GetTodayTasks().then((response) => {
                 isLoading = true;
                 setTasks(response);
@@ -147,12 +160,16 @@ export default function Tomorrow({ tomorrowItems }) {
 
         newTasks[index].priority += addPriority;
         // setTasks(newTasks);
-        PostAndGetTasks(newTasks, setTasks);
+        // PostAndGetTasks(newTasks, setTasks);
+        PostPriority(newTasks[index]).then(() => {
+            GetTodayTasks().then((response) => {
+                isLoading = true;
+                setTasks(response);})
+        });
 
     }
 
     function handleDeleteClick(index) {
-
         Delete_Task(tasks[index]).then(() => {
             GetTodayTasks().then((response) => {
                 isLoading = true;

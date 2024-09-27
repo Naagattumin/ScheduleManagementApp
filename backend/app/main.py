@@ -399,9 +399,9 @@ def delete_task_data(request_data: Task):
         session.close()
 
 
-@app.post("/post_achievement")
-def post_achievement(request_data: Task):
-    mylog.debug("post_achievement/start")
+@app.post("/post_progress")
+def post_progress(request_data: Task):
+    mylog.debug("post_progress/start")
     print(request_data)##############
 
     try:
@@ -419,32 +419,73 @@ def post_achievement(request_data: Task):
         session.rollback()
         mylog.error(f"Error updating task: {e}")
         raise HTTPException(status_code=500, detail="Failed to update task") from e
-    
-
-# @app.post("/post_achievement/{data}")
-# def post_achievement(request_data: Task):
-#     mylog.debug("post_achievement/start")
-
-#     try:
-#         # タスクが存在するかを確認
-#         task = session.query(TaskTable).filter(TaskTable.id == request_data.id).first()
-
-#         if not task:
-#             mylog.warning(f"No task found with id: {request_data.id}")
-#             raise HTTPException(status_code=404, detail="Task not found")
-
-#         task.progress = request_data.progress
-#         session.commit()
-#         return {"message": "Task updated successfully"}
-#     except Exception as e:
-#         session.rollback()
-#         mylog.error(f"Error updating task: {e}")
-#         raise HTTPException(status_code=500, detail="Failed to update task") from e
 
 
-# @app.post("/post_tomorrow_task")
-# def insert_task_data(tasks: List[Task]):
+@app.post("/post_priority")
+def post_priority(request_data: Task):
+    mylog.debug("post_priority/start")
+    print(request_data)##############
 
+    try:
+        # タスクが存在するかを確認
+        task = session.query(TaskTable).filter(TaskTable.id == request_data.id).first()
+
+        if not task:
+            mylog.debug(f"No task found with id: {request_data.id}")
+
+            tmp_exec_date = py_epoch_to_datetime(time.time(), 0).strftime("%Y%m%d")# デバグのためtommorow=0にしてる########
+            task_to_insert = TaskTable(
+                id = request_data.id,
+                exec_date = tmp_exec_date,
+                contents=request_data.contents,
+                priority=request_data.priority,
+                progress=request_data.progress,
+            )
+            session.add(task_to_insert)
+            session.commit()
+            return {"message": "Task created successfully"}
+        else:
+            task.priority = request_data.priority
+            session.commit()
+            return {"message": "Task updated successfully"}
+
+    except Exception as e:
+        session.rollback()
+        mylog.error(f"Error updating task: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update task") from e
+
+
+@app.post("/post_contents")
+def post_contents(request_data: Task):
+    mylog.debug("post_contents/start")
+    print(request_data)##############
+
+    try:
+        # タスクが存在するかを確認
+        task = session.query(TaskTable).filter(TaskTable.id == request_data.id).first()
+
+        if not task:
+            mylog.warning(f"No task found with id: {request_data.id}")
+
+            tmp_exec_date = py_epoch_to_datetime(time.time(), 0).strftime("%Y%m%d")# デバグのためtommorow=0にしてる########
+            task_to_insert = TaskTable(
+                id = request_data.id,
+                exec_date = tmp_exec_date,
+                contents=request_data.contents,
+                priority=request_data.priority,
+                progress=request_data.progress,
+            )
+            session.add(task_to_insert)
+            session.commit()
+            return {"message": "Task created successfully"}
+        else:
+            task.contents = request_data.contents
+            session.commit()
+            return {"message": "Task updated successfully"}
+    except Exception as e:
+        session.rollback()
+        mylog.error(f"Error updating task: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update task") from e
 
 
 @app.get("/get_dbg_task_data")##################

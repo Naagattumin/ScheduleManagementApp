@@ -84,15 +84,15 @@ export default function App() {
     }
 
 
-    function PostAchievement(tasks) {
-        console.log("🐾PostAchievement_start🐾");//////////
+    function PostProgress(task) {
+        console.log("🐾PostProgress_start🐾");//////////
 
-        return axios.post(`${prefixApi}/post_achievement/`, tasks)
+        return axios.post(`${prefixApi}/post_progress/`, task)
         .then(response => {
-            console.log("🐾PostAchievement_then🐾", response.data);
+            console.log("🐾PostProgress_then🐾", response.data);
         })
         .catch(error => {
-            console.error("🐾!!!PostAchievement_catch🐾", error);
+            console.error("🐾!!!PostProgress_catch🐾", error);
         });
     }
 
@@ -119,7 +119,7 @@ export default function App() {
             }
         }
 
-        PostAchievement(todayItems[index]).then(() => {
+        PostProgress(todayItems[index]).then(() => {
             (async () => {
                 const tmp = await GetTodayTasks();
                 console.log("🐾handleUpdateClick_then🐾", tmp);//////////
