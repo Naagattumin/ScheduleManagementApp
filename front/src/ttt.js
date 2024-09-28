@@ -4,34 +4,31 @@ import { prefixApi } from "./Connector";
 
 
 export default function Tomorrow({ tomorrowItems }) {
-    // ダミーデータ
-    tomorrowItems = [{
-        id: "1724236965191",
-        exec_date: "20240811",
-        priority: 5,
-        contents: "TodoAppの実装",
-        progress: 4,
-    }, {
-        id: "1724236965193",
-        exec_date: "20240811",
-        priority: 4,
-        contents: "選択",
-        progress: 3,
-    }, {
-        id: "1724236965192",
-        exec_date: "20240811",
-        priority: 1,
-        contents: "掃除",
-        progress: 1,
-    }];
+    // // ダミーデータ
+    // tomorrowItems = [{
+    //     id: "1724236965191",
+    //     exec_date: "20240811",
+    //     priority: 5,
+    //     contents: "TodoAppの実装",
+    //     progress: 4,
+    // }, {
+    //     id: "1724236965193",
+    //     exec_date: "20240811",
+    //     priority: 4,
+    //     contents: "選択",
+    //     progress: 3,
+    // }, {
+    //     id: "1724236965192",
+    //     exec_date: "20240811",
+    //     priority: 1,
+    //     contents: "掃除",
+    //     progress: 1,
+    // }];
 
 
     const [tasks, setTasks] = useState();
 
-    const [text, setText] = useState("");
-
     const [loading, setLoading] = useState(true);
-    let isLoading = true;
 
     function GetTodayTasks() {
         let jsEpoch = Date.now();
@@ -124,30 +121,18 @@ export default function Tomorrow({ tomorrowItems }) {
     const OnchangeText = (index, newContents) => {
         let newTasks = tasks.concat();
         newTasks[index].contents = newContents;
-        isLoading = true;
+
         setTasks(newTasks);
-
-
-        // let newTasks = tasks.concat();
-        // newTasks[index].contents = newContents;
-        // setText(newTasks);
-
-
-        // let newTmpTtext = text;
-        // newTmpTtext = newContents;
-        // setText(newTmpTtext);
     }
 
     function OnBlurText(index, newText) {
         PostContents(tasks[index]).then(() => {
             GetTodayTasks().then((response) => {
-                isLoading = true;
+                setLoading(true);
                 setTasks(response);
             })
         })
     }
-
-
 
     const handlePriorityClick = (index, addPriority) => {
         let newTasks = tasks.concat();
@@ -159,32 +144,22 @@ export default function Tomorrow({ tomorrowItems }) {
         }
 
         newTasks[index].priority += addPriority;
-        // setTasks(newTasks);
-        // PostAndGetTasks(newTasks, setTasks);
+
         PostPriority(newTasks[index]).then(() => {
             GetTodayTasks().then((response) => {
-                isLoading = true;
+                setLoading(true);
                 setTasks(response);})
         });
-
     }
 
     function handleDeleteClick(index) {
         Delete_Task(tasks[index]).then(() => {
             GetTodayTasks().then((response) => {
-                isLoading = true;
+                setLoading(true);
                 setTasks(response);
             })
         })
-
-
-
-        // setTasks(nextTasks);
-        
-
-        // Delete_Task(tasks[index]);
     }
-
 
     // タスクの追加ボタンで発火。
     const handleAddClick = () => {
@@ -215,75 +190,33 @@ export default function Tomorrow({ tomorrowItems }) {
         }
         newTask.push(addedTask);
 
+        setLoading(true);
         setTasks(newTask);
-    }
-
-    // タスクの更新ボタンで発火。
-    ////////////デバグのため今日のタスクを取得している
-    async function handleUpdateClick() {
-        console.log("🐾handleUpdateClick_start🐾", tasks);
-
-        PostTasks(tasks).then(() => {
-            GetTodayTasks().then((response) => {
-                isLoading = true;
-                setTasks(response);
-            })
-        })
-
-        // PostAndGetTasks(tasks, setTasks);
-
-        // PostTasks(tasks).then(() => {
-        //     (async () => {
-        //         //const tmp = await GetTomorrowTasks();//////////デバグのために GetTodayTasks にしてる
-        //         const tmp = await GetTodayTasks();
-        //         console.log("🐾handleUpdateClick_then🐾", tmp);//////////
-        //         setTasks(tmp);
-        //     })();
-        // })
-
-        // new Promise((resolve, reject) => {
-        //     PostTasks(tasks);
-        //     resolve();
-        // })
-        // .then(() => {
-        //     setTasks(await GetTodayTasks());
-        //     return;
-        // });
-
-        console.log("🐾handleUpdateClick_complete🐾", tasks);//////////
     }
 
 
     useEffect(() => {
         (async () => {
-            isLoading = true;
+            setLoading(true);
             setTasks(await GetTodayTasks());
         })();
     }, []);
 
-
     useEffect(() => {
-        console.log("🐾useEffect[tasks]🐾", tasks);//////////
         if (tasks === undefined) {
             console.log("🐾tasks is undefined🐾");//////////
             return;
         }
-        // setLoading(true);
-        // PostTasks(tasks).then(() => {
-        //     setLoading(false);
-        // });
+
         setLoading(false);
-        isLoading = false;
     }, [tasks]);
 
     if (loading) {
-        console.log("🐾Loading🐾");//////////////////
         return <h1>Loading...</h1>;
     }
 
 
-
-    function handleDbgClick() {
+    function handleDbgClick() {////////////////
         axios.get(`${prefixApi}/get_dbg_task_data/`)
             .then(response => {
                 console.log("🐾get_dbg_task_data_then🐾", response.data);//////////
@@ -297,7 +230,6 @@ export default function Tomorrow({ tomorrowItems }) {
 
     return (
         <div style={{ textAlign: "center" }}>
-            <h2>明日のタスク6</h2>
             <button onClick={handleDbgClick}>dbg</button>
             <button onClick={handleAddClick}>タスクの追加</button>
 
@@ -338,7 +270,6 @@ export default function Tomorrow({ tomorrowItems }) {
                     id: {task.id}, exec_date: {task.exec_date}, priority: {task.priority}, progress: {task.progress}
                 </div>
             ))}
-            <button onClick={handleUpdateClick}>更新</button>
         </div>
     );////////////////
 }

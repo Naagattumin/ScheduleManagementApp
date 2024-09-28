@@ -135,7 +135,6 @@ export default function App() {
 
     return (
         <>
-            <h1 style={{ textAlign: "center" }}>{today}のタスク1</h1>
             <button onClick={() => {OnClickUpdate()}}>更新</button>
             {todayItems.map((task, index) => (
                 <ul style={{ textAlign: "center" }}>

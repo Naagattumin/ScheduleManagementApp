@@ -163,19 +163,68 @@ app.add_middleware(
 )
 
 
+def py_epoch_to_date(py_epoch, tomorrow=0) -> datetime.date:
+    """午前4時に日付が変わるようにずれた日時を返す。
+
+    Args:
+        py_epoch (int, str): エポック秒。現在のものは time.time() とかで取得できる。
+        tomorrow (int, optional): tomorrow=1 なら翌日の日付を返す. Defaults to 0.
+
+    return:
+        datetime.date: ずれた日付
+    """
+    assert tomorrow in (0, 1)
+    py_epoch = int(py_epoch)
+    # 4 * 60 * 60 は4時間の秒数。午前4時に日付が変わるようにずらす。
+    py_epoch = py_epoch - 4 * 60 * 60 + tomorrow * 24 * 60 * 60
+    try:
+        return datetime.date.fromtimestamp(py_epoch)
+    except (ValueError, OSError) as e:
+        raise ValueError(f"Invalid py_epoch format: {py_epoch}") from e
+
+
+
+def js_epoch_to_date(js_epoch, tomorrow=0) -> datetime.date:
+    """午前4時に日付が変わるようにずれた日時を返す。
+
+    Args:
+        js_epoch (int, str): エポックミリ秒。
+        tomorrow (int, optional): tomorrow=1 なら翌日の日付を返す. Defaults to 0.
+
+    return:
+        datetime.date: ずれた日付
+    """
+    assert tomorrow in (0, 1)
+    py_epoch = int(js_epoch) / 1000
+    # 4 * 60 * 60 は4時間の秒数。午前4時に日付が変わるようにずらす。
+    py_epoch = py_epoch - 4 * 60 * 60 + tomorrow * 24 * 60 * 60
+    try:
+        return datetime.date.fromtimestamp(py_epoch)
+    except (ValueError, OSError) as e:
+        raise ValueError(f"Invalid py_epoch format: {py_epoch}") from e
+
+
+
+
 
 # サンプルデータの挿入###################
-task1 = TaskTable(id='1', exec_date = "2024-01-01", contents='Task 1', priority=1, progress=1)
-task2 = TaskTable(id='2', exec_date = "2024-01-01", contents='Task 2', priority=2, progress=2)
+task1 = TaskTable(id='1', exec_date = py_epoch_to_date(time.time() - 3 * 24 * 60 * 60), contents='Task 1', priority=1, progress=1)
+task2 = TaskTable(id='2', exec_date = py_epoch_to_date(time.time() - 3 * 24 * 60 * 60), contents='Task 2', priority=2, progress=5)
+task3 = TaskTable(id='3', exec_date = py_epoch_to_date(time.time() - 5 * 24 * 60 * 60), contents='Task 3', priority=2, progress=2)
+task4 = TaskTable(id='4', exec_date = py_epoch_to_date(time.time() - 5 * 24 * 60 * 60), contents='Task 4', priority=2, progress=5)
+task5 = TaskTable(id='5', exec_date = py_epoch_to_date(time.time() - 5 * 24 * 60 * 60), contents='Task 5', priority=2, progress=5)
 
 session.add(task1)#########
 session.add(task2)########
+session.add(task3)########
+session.add(task4)########
+session.add(task5)########
 session.commit()###########
 
-# データのクエリtest###########
-tmpTasks = session.query(TaskTable).all()
-for x in tmpTasks:
-    mylog.debug(f"{x.id}, {x.contents}, {x.priority}, {x.progress}")
+# # データのクエリtest###########
+# tmpTasks = session.query(TaskTable).all()
+# for x in tmpTasks:
+#     mylog.debug(f"{x.id}, {x.contents}, {x.priority}, {x.progress}")
 
 
 
@@ -195,47 +244,6 @@ class Task(BaseModel):
 
 
 
-def py_epoch_to_datetime(py_epoch, tomorrow=0):
-    """午前4時に日付が変わるようにずれた日時を返す。返り値は日付のみを使うこと。
-
-    Args:
-        py_epoch (int, str): エポック秒。
-        tomorrow (int, optional): tomorrow=1 なら翌日の日付を返す. Defaults to 0.
-
-    return:
-        datetime.datetime: 日付のみを使うこと
-    """
-    assert tomorrow in (0, 1)
-    py_epoch = int(py_epoch)
-    # 4 * 60 * 60 は4時間の秒数。午前4時に日付が変わるようにずらす。
-    py_epoch = py_epoch - 4 * 60 * 60 + tomorrow * 24 * 60 * 60
-    try:
-        return datetime.datetime.fromtimestamp(py_epoch)
-    except (ValueError, OSError) as e:
-        raise ValueError(f"Invalid py_epoch format: {py_epoch}") from e
-
-
-
-def js_epoch_to_datetime(js_epoch, tomorrow=0):
-    """午前4時に日付が変わるようにずれた日時を返す。返り値は日付のみを使うこと。
-
-    Args:
-        js_epoch (int, str): エポックミリ秒。
-        tomorrow (int, optional): tomorrow=1 なら翌日の日付を返す. Defaults to 0.
-
-    return:
-        datetime.datetime: 日付のみを使うこと
-    """
-    assert tomorrow in (0, 1)
-    py_epoch = int(js_epoch) / 1000
-    # 4 * 60 * 60 は4時間の秒数。午前4時に日付が変わるようにずらす。
-    py_epoch = py_epoch - 4 * 60 * 60 + tomorrow * 24 * 60 * 60
-    try:
-        return datetime.datetime.fromtimestamp(py_epoch)
-    except (ValueError, OSError) as e:
-        raise ValueError(f"Invalid py_epoch format: {py_epoch}") from e
-
-
 
 @app.get("/get_task_data/{js_epoch}")
 def get_task_data(js_epoch: str):
@@ -243,7 +251,8 @@ def get_task_data(js_epoch: str):
     try:
         # id.like(文字列)で、その文字列を含むidを持つデータをフィルタリングする
         # all()で、フィルタリングされた全てのデータをリストとして取得する
-        date = js_epoch_to_datetime(js_epoch).strftime("%Y%m%d")
+        date = js_epoch_to_date(js_epoch)########
+        # date = js_epoch_to_datetime(js_epoch).strftime("%Y%m%d")
         tasks = session.query(TaskTable).filter(TaskTable.exec_date.like(f'%{date}%')).all()
         mylog.info(f"Fetching tasks for date: {date}")
         for task in tasks:########
@@ -262,7 +271,8 @@ from typing import List
 def insert_task_data(tasks: List[Task]):
     mylog.debug("insert_task_data/start")
 
-    tmp_exec_date = py_epoch_to_datetime(time.time(), 0).strftime("%Y%m%d")# デバグのためtommorow=0にしてる########
+    tmp_exec_date = py_epoch_to_date(time.time(), 0)##############
+    # tmp_exec_date = py_epoch_to_date(time.time(), 0).strftime("%Y%m%d")# デバグのためtommorow=0にしてる########
 
 
     try:
@@ -320,6 +330,7 @@ def insert_task_data(tasks: List[Task]):
         session.rollback()
         mylog.error(f"Error inserting tasks: {e}")
         raise HTTPException(status_code=500, detail="Failed to insert tasks") from e
+
 
 
 
@@ -433,7 +444,8 @@ def post_priority(request_data: Task):
         if not task:
             mylog.debug(f"No task found with id: {request_data.id}")
 
-            tmp_exec_date = py_epoch_to_datetime(time.time(), 0).strftime("%Y%m%d")# デバグのためtommorow=0にしてる########
+            tmp_exec_date = py_epoch_to_date(time.time(), 0)########
+            # tmp_exec_date = py_epoch_to_datetime(time.time(), 0).strftime("%Y%m%d")# デバグのためtommorow=0にしてる########
             task_to_insert = TaskTable(
                 id = request_data.id,
                 exec_date = tmp_exec_date,
@@ -467,7 +479,8 @@ def post_contents(request_data: Task):
         if not task:
             mylog.warning(f"No task found with id: {request_data.id}")
 
-            tmp_exec_date = py_epoch_to_datetime(time.time(), 0).strftime("%Y%m%d")# デバグのためtommorow=0にしてる########
+            tmp_exec_date = py_epoch_to_date(time.time(), 0)########
+            # tmp_exec_date = py_epoch_to_datetime(time.time(), 0).strftime("%Y%m%d")# デバグのためtommorow=0にしてる########
             task_to_insert = TaskTable(
                 id = request_data.id,
                 exec_date = tmp_exec_date,
@@ -486,6 +499,31 @@ def post_contents(request_data: Task):
         session.rollback()
         mylog.error(f"Error updating task: {e}")
         raise HTTPException(status_code=500, detail="Failed to update task") from e
+
+
+@app.get("/get_chart_data")
+def get_chart_data():
+    dt_now = datetime.date.today()
+
+    data = [[], []]
+
+    try:
+        for i in range(30, 0, -1):
+            dt = dt_now - datetime.timedelta(days=i)
+            tasks = session.query(TaskTable).filter(TaskTable.exec_date == dt).all()
+            cnt = 0
+            for task in tasks:
+                if task.progress == 5:
+                    cnt += 1
+            data[0].append(i)
+            data[1].append(cnt)
+        return data
+    except Exception as e:
+        mylog.error("Error fetching tasks: %s", e)
+        raise HTTPException(status_code=500, detail="Failed to fetch tasks")from e
+
+
+
 
 
 @app.get("/get_dbg_task_data")##################
