@@ -1,0 +1,41 @@
+# -*- coding: utf-8 -*-
+# モデルの定義
+from sqlalchemy import Column, Integer, String, TIMESTAMP, func
+from pydantic import BaseModel
+from db import Base
+from db import ENGINE
+
+
+# ScheduleManagementApp\mysql\initdb.d\schema.sql でも定義してるけど、mysqlを使うときはここでも定義する必要がある。向こうが必要かは謎。写しミスったときどうなるのかも謎。
+
+# Baseはdb.pyで定義してる。
+# from sqlalchemy.orm import declarative_base
+# Base = declarative_base()
+# なんでここでやらないのかは謎。
+class TaskTable(Base):
+    __tablename__ = 'task'
+
+    id = Column(String(20), primary_key=True, nullable=False)
+    contents = Column(String(100), nullable=False)
+    priority = Column(Integer, nullable=False)
+    progress = Column(Integer, nullable=False)
+    created_at = Column(TIMESTAMP, server_default=func.now(), nullable=False)# pylint: disable=not-callable
+    updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now(), nullable=False)# pylint: disable=not-callable
+
+
+# POSTやPUTのとき受け取るRequest Bodyのモデルを定義
+class Task(BaseModel):
+    id: str
+    contents: str
+    priority: int
+    progress:int
+
+
+def main():
+    # テーブルが存在しなければ、テーブルを作成
+    Base.metadata.create_all(bind=ENGINE)
+
+# 呼ばれなくね？
+if __name__ == "__main__":
+    print("!!!!!" + __name__)#####################
+    main()
