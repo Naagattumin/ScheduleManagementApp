@@ -44,6 +44,8 @@ export default function App() {
 
     const [tomorrowItems, setTomorrowItems] = useState(initialItems);
 
+    const [loading, setLoading] = useState(true);
+
     function GetTodayTasks() {
         let epoch = Date.now();
 
@@ -99,9 +101,24 @@ export default function App() {
 
     useEffect(() => {
         (async () => {
+            setLoading(true);
             setTodayItems(await GetTodayTasks());
         })();
     }, []);
+
+
+    useEffect(() => {
+        if (todayItems === undefined) {
+            console.log("🐾tasks is undefined🐾");//////////
+            return;
+        }
+
+        setLoading(false);
+    }, [todayItems]);
+
+    if (loading) {
+        return <h1>Loading...</h1>;
+    }
 
 
     function OnClickProg(index, num) {
@@ -135,7 +152,6 @@ export default function App() {
 
     return (
         <>
-            <button onClick={() => {OnClickUpdate()}}>更新</button>
             {todayItems.map((task, index) => (
                 <ul style={{ textAlign: "center" }}>
                     <li style={{ display: "inline-block", width: "10%"}}>優先度： {task.priority}  </li>

@@ -213,12 +213,20 @@ task2 = TaskTable(id='2', exec_date = py_epoch_to_date(time.time() - 3 * 24 * 60
 task3 = TaskTable(id='3', exec_date = py_epoch_to_date(time.time() - 5 * 24 * 60 * 60), contents='Task 3', priority=2, progress=2)
 task4 = TaskTable(id='4', exec_date = py_epoch_to_date(time.time() - 5 * 24 * 60 * 60), contents='Task 4', priority=2, progress=5)
 task5 = TaskTable(id='5', exec_date = py_epoch_to_date(time.time() - 5 * 24 * 60 * 60), contents='Task 5', priority=2, progress=5)
+task6 = TaskTable(id='6', exec_date = py_epoch_to_date(time.time() + 0 * 24 * 60 * 60), contents='Task 6', priority=2, progress=0)
+task7 = TaskTable(id='7', exec_date = py_epoch_to_date(time.time() + 0 * 24 * 60 * 60), contents='Task 7', priority=2, progress=0)
+task8 = TaskTable(id='8', exec_date = py_epoch_to_date(time.time() + 1 * 24 * 60 * 60), contents='Task 8', priority=2, progress=0)
+task9 = TaskTable(id='9', exec_date = py_epoch_to_date(time.time() + 1 * 24 * 60 * 60), contents='Task 9', priority=2, progress=0)
 
 session.add(task1)#########
 session.add(task2)########
 session.add(task3)########
 session.add(task4)########
 session.add(task5)########
+session.add(task6)########
+session.add(task7)########
+session.add(task8)########
+session.add(task9)########
 session.commit()###########
 
 # # データのクエリtest###########
@@ -251,8 +259,7 @@ def get_task_data(js_epoch: str):
     try:
         # id.like(文字列)で、その文字列を含むidを持つデータをフィルタリングする
         # all()で、フィルタリングされた全てのデータをリストとして取得する
-        date = js_epoch_to_date(js_epoch)########
-        # date = js_epoch_to_datetime(js_epoch).strftime("%Y%m%d")
+        date = js_epoch_to_date(js_epoch)
         tasks = session.query(TaskTable).filter(TaskTable.exec_date.like(f'%{date}%')).all()
         mylog.info(f"Fetching tasks for date: {date}")
         for task in tasks:########
@@ -266,21 +273,17 @@ def get_task_data(js_epoch: str):
 
 from typing import List
 
-########デバグのため post_today_task みたくなってる
+
 @app.post("/post_tomorrow_task")
 def insert_task_data(tasks: List[Task]):
     mylog.debug("insert_task_data/start")
 
-    tmp_exec_date = py_epoch_to_date(time.time(), 0)##############
-    # tmp_exec_date = py_epoch_to_date(time.time(), 0).strftime("%Y%m%d")# デバグのためtommorow=0にしてる########
-
+    tmp_exec_date = py_epoch_to_date(time.time(), 1)
 
     try:
         mylog.debug("post_tomorrow_task/try")
 
-
-
-        # 同じ id のタスクは追加しない
+        # 同じ id のタスクは追加しないで、内容だけ変更する
         same_date_tasks = session.query(TaskTable).filter(TaskTable.exec_date == tmp_exec_date).all()
 
         # 同じタスクが有ったときメッセージに出すためのフラグ
@@ -479,7 +482,7 @@ def post_contents(request_data: Task):
         if not task:
             mylog.warning(f"No task found with id: {request_data.id}")
 
-            tmp_exec_date = py_epoch_to_date(time.time(), 0)########
+            tmp_exec_date = py_epoch_to_date(time.time(), 1)########
             # tmp_exec_date = py_epoch_to_datetime(time.time(), 0).strftime("%Y%m%d")# デバグのためtommorow=0にしてる########
             task_to_insert = TaskTable(
                 id = request_data.id,
@@ -521,6 +524,32 @@ def get_chart_data():
     except Exception as e:
         mylog.error("Error fetching tasks: %s", e)
         raise HTTPException(status_code=500, detail="Failed to fetch tasks")from e
+
+
+@app.get("/get_streak_data")
+def get_streak_data():
+    dt_now = datetime.date.today()
+
+    streak = 0
+
+    try:
+        for i in range(0, 30, 1):
+            dt = dt_now - datetime.timedelta(days=i)
+            tasks = session.query(TaskTable).filter(TaskTable.exec_date == dt).all()
+            for task in tasks:
+                if task.progress == 5:
+                    streak += 1
+                    break
+            else:
+                continue
+
+            break
+        return streak
+    except Exception as e:
+        mylog.error("Error get_streak_data: %s", e)
+        raise HTTPException(status_code=500, detail="Failed to get_streak_data")from e
+        
+        
 
 
 

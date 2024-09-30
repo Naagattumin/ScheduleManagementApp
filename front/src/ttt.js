@@ -127,7 +127,7 @@ export default function Tomorrow({ tomorrowItems }) {
 
     function OnBlurText(index, newText) {
         PostContents(tasks[index]).then(() => {
-            GetTodayTasks().then((response) => {
+            GetTomorrowTasks().then((response) => {
                 setLoading(true);
                 setTasks(response);
             })
@@ -146,7 +146,7 @@ export default function Tomorrow({ tomorrowItems }) {
         newTasks[index].priority += addPriority;
 
         PostPriority(newTasks[index]).then(() => {
-            GetTodayTasks().then((response) => {
+            GetTomorrowTasks().then((response) => {
                 setLoading(true);
                 setTasks(response);})
         });
@@ -154,7 +154,7 @@ export default function Tomorrow({ tomorrowItems }) {
 
     function handleDeleteClick(index) {
         Delete_Task(tasks[index]).then(() => {
-            GetTodayTasks().then((response) => {
+            GetTomorrowTasks().then((response) => {
                 setLoading(true);
                 setTasks(response);
             })
@@ -198,7 +198,7 @@ export default function Tomorrow({ tomorrowItems }) {
     useEffect(() => {
         (async () => {
             setLoading(true);
-            setTasks(await GetTodayTasks());
+            setTasks(await GetTomorrowTasks());
         })();
     }, []);
 
@@ -230,7 +230,6 @@ export default function Tomorrow({ tomorrowItems }) {
 
     return (
         <div style={{ textAlign: "center" }}>
-            <button onClick={handleDbgClick}>dbg</button>
             <button onClick={handleAddClick}>タスクの追加</button>
 
             {/* tasksを回してるからtasksの要素が増えるとたTaskLineの行が増える */}
@@ -266,8 +265,6 @@ export default function Tomorrow({ tomorrowItems }) {
                     >
                         +
                     </button>
-
-                    id: {task.id}, exec_date: {task.exec_date}, priority: {task.priority}, progress: {task.progress}
                 </div>
             ))}
         </div>
